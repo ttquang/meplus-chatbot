@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Merinco – Tư vấn vật tư y tế</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230b6e69'/%3E%3Cpath d='M13 7h6v6h6v6h-6v6h-6v-6H7v-6h6z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap">
+<style>
+  /* Clinical, calm: a deep teal on a soft mint-white ground, with a warm accent for prices. */
+  :root {
+    --bg: #f4f8f7;
+    --bg-tint: #e6f1ef;
+    --surface: #ffffff;
+    --edge: #dce7e5;
+    --edge-strong: #c5d6d3;
+    --text: #10262b;
+    --muted: #4c6368;
+    --faint: #75898d;
+    --teal: #0b6e69;
+    --teal-ink: #095a56;
+    --teal-soft: #e3f2f0;
+    --bot-bubble: #eef5f4;
+    --me-bubble: #0b6e69;
+    --me-text: #ffffff;
+    --price: #b4431f;
+    --danger: #b3261e;
+    --shadow: 0 1px 2px rgba(16, 38, 43, .05), 0 20px 50px -24px rgba(16, 38, 43, .30);
+    --radius: 18px;
+    --font: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1a1c; --bg-tint: #112427; --surface: #152a2d; --edge: #213b3f; --edge-strong: #2e4e52;
+      --text: #e6f0ef; --muted: #a6bcbe; --faint: #7f9699; --teal: #3fb8ae; --teal-ink: #6fd0c7;
+      --teal-soft: #173a3a; --bot-bubble: #1c3538; --me-bubble: #2a9d94; --me-text: #04211f;
+      --price: #f09a74; --danger: #ff8a80; --shadow: 0 20px 50px -24px rgba(0, 0, 0, .6);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1a1c; --bg-tint: #112427; --surface: #152a2d; --edge: #213b3f; --edge-strong: #2e4e52;
+    --text: #e6f0ef; --muted: #a6bcbe; --faint: #7f9699; --teal: #3fb8ae; --teal-ink: #6fd0c7;
+    --teal-soft: #173a3a; --bot-bubble: #1c3538; --me-bubble: #2a9d94; --me-text: #04211f;
+    --price: #f09a74; --danger: #ff8a80; --shadow: 0 20px 50px -24px rgba(0, 0, 0, .6);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { height: 100%; background: var(--bg); }
+  body {
+    margin: 0; min-height: 100%; display: flex; flex-direction: column;
+    background: radial-gradient(1200px 500px at 85% -10%, var(--bg-tint), transparent 70%), var(--bg);
+    color: var(--text); font: 400 15px/1.55 var(--font); -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  button, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+
+  /* ---------- Header ---------- */
+  .top {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    max-width: 1200px; width: 100%; margin: 0 auto; padding: 18px 24px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+  .brand svg { width: 34px; height: 34px; flex: none; }
+  .brand b { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+  .brand small { display: block; font-size: 12px; color: var(--muted); line-height: 1.2; }
+  .badges { display: flex; gap: 18px; color: var(--muted); font-size: 13px; }
+  .badges span { display: inline-flex; align-items: center; gap: 6px; }
+  .badges svg { width: 16px; height: 16px; color: var(--teal); }
+
+  /* ---------- Layout ---------- */
+  main {
+    flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 480px); gap: 40px;
+    max-width: 1200px; width: 100%; margin: 0 auto; padding: 12px 24px 32px; align-items: start;
+  }
+  .intro { padding-top: 28px; min-width: 0; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border-radius: 999px;
+    background: var(--teal-soft); color: var(--teal-ink); font-size: 13px; font-weight: 600;
+  }
+  .eyebrow::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--teal); }
+  h1 { font-size: clamp(30px, 4vw, 46px); line-height: 1.12; letter-spacing: -.02em; margin: 18px 0 14px; font-weight: 700; }
+  h1 em { font-style: normal; color: var(--teal); }
+  .lead { color: var(--muted); font-size: 16px; max-width: 520px; margin: 0 0 28px; }
+  .label { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); margin: 0 0 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 30px; }
+  .chip {
+    border: 1px solid var(--edge-strong); background: var(--surface); border-radius: 999px;
+    padding: 7px 14px; font-size: 14px; cursor: pointer; transition: border-color .15s, background .15s, color .15s;
+  }
+  .chip:hover { border-color: var(--teal); color: var(--teal-ink); background: var(--teal-soft); }
+  .chip:disabled { opacity: .5; cursor: default; }
+
+  /* ---------- Product being looked at ---------- */
+  .product {
+    background: var(--surface); border: 1px solid var(--edge); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 20px 22px; max-width: 560px;
+  }
+  .product h2 { font-size: 17px; line-height: 1.35; margin: 4px 0 6px; font-weight: 600; }
+  .product .meta { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+  .product .desc { color: var(--muted); font-size: 14px; margin: 0; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+  .product .buy { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--edge-strong); }
+  .product .unit { font-size: 14px; color: var(--muted); }
+  .product .price { font-size: 22px; font-weight: 700; color: var(--price); white-space: nowrap; }
+  .note { color: var(--faint); font-size: 12.5px; margin: 18px 0 0; max-width: 560px; }
+
+  /* ---------- Chat ---------- */
+  .chat {
+    display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--edge);
+    border-radius: 22px; box-shadow: var(--shadow); height: min(720px, calc(100vh - 110px)); min-height: 520px;
+    overflow: hidden; position: sticky; top: 16px;
+  }
+  .chat-head { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--edge); }
+  .avatar { width: 40px; height: 40px; border-radius: 12px; background: var(--teal); display: grid; place-items: center; flex: none; }
+  .avatar svg { width: 22px; height: 22px; }
+  .chat-title { flex: 1; min-width: 0; }
+  .chat-title b { display: block; font-size: 15px; font-weight: 600; }
+  .status { font-size: 12.5px; color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+  .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #2eb872; }
+  .status.offline::before { background: var(--danger); }
+  .icon-btn {
+    border: 1px solid var(--edge); background: transparent; border-radius: 10px; height: 36px; padding: 0 10px;
+    display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer;
+  }
+  .icon-btn:hover { color: var(--teal-ink); border-color: var(--teal); }
+  .icon-btn svg { width: 16px; height: 16px; }
+
+  .steps { display: flex; gap: 4px; margin: 0; padding: 10px 16px; border-bottom: 1px solid var(--edge); font-size: 11.5px; color: var(--faint); }
+  .steps li { flex: 1; list-style: none; text-align: center; min-width: 0; }
+  .steps li::before { content: ""; display: block; height: 4px; border-radius: 4px; background: var(--edge); margin-bottom: 5px; }
+  .steps li.done::before, .steps li.now::before { background: var(--teal); }
+  .steps li.now { color: var(--teal-ink); font-weight: 600; }
+
+  .messages { flex: 1; overflow-y: auto; padding: 18px 16px 8px; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+  .msg { max-width: 86%; padding: 10px 14px; border-radius: 16px; white-space: pre-line; overflow-wrap: anywhere; }
+  .msg.bot { background: var(--bot-bubble); border-bottom-left-radius: 6px; align-self: flex-start; }
+  .msg.me { background: var(--me-bubble); color: var(--me-text); border-bottom-right-radius: 6px; align-self: flex-end; }
+  .day { align-self: center; font-size: 12px; color: var(--faint); }
+  .notice { align-self: center; text-align: center; font-size: 13px; color: var(--muted); max-width: 90%; }
+  .notice button { display: block; margin: 8px auto 0; border: 0; border-radius: 999px; padding: 7px 16px; background: var(--teal); color: #fff; font-weight: 600; cursor: pointer; }
+  .typing { align-self: flex-start; background: var(--bot-bubble); border-radius: 16px; padding: 12px 14px; display: flex; gap: 4px; }
+  .typing i { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); animation: blink 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .3; } 40% { opacity: 1; } }
+  .quick { display: flex; flex-wrap: wrap; gap: 8px; align-self: flex-start; max-width: 100%; }
+  .quick button {
+    border: 1px solid var(--teal); color: var(--teal-ink); background: var(--surface); border-radius: 12px;
+    padding: 7px 12px; font-size: 13.5px; text-align: left; cursor: pointer; max-width: 100%;
+  }
+  .quick button:hover { background: var(--teal-soft); }
+
+  .composer { display: flex; align-items: flex-end; gap: 8px; padding: 12px; border-top: 1px solid var(--edge); }
+  .composer textarea {
+    flex: 1; resize: none; max-height: 120px; border: 1px solid var(--edge-strong); border-radius: 14px;
+    padding: 10px 14px; background: var(--bg); outline: none; line-height: 1.4; min-height: 44px;
+  }
+  .composer textarea:focus { border-color: var(--teal); }
+  .send {
+    width: 44px; height: 44px; border: 0; border-radius: 14px; background: var(--teal); color: #fff;
+    display: grid; place-items: center; cursor: pointer; flex: none;
+  }
+  .send:disabled { opacity: .45; cursor: default; }
+  .send svg { width: 20px; height: 20px; }
+  .fine { text-align: center; font-size: 11.5px; color: var(--faint); padding: 0 12px 10px; margin: 0; }
+
+  footer { text-align: center; color: var(--faint); font-size: 12.5px; padding: 8px 16px 20px; }
+
+  /* ---------- Small screens: the chat comes first and fills the screen ---------- */
+  @media (max-width: 900px) {
+    main { grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 4px 16px 24px; }
+    .top { padding: 14px 16px; }
+    .badges { display: none; }
+    .chat { order: -1; position: static; height: calc(100svh - 90px); min-height: 460px; }
+    .intro { padding-top: 0; }
+    h1 { margin-top: 12px; }
+    .chips { flex-wrap: nowrap; overflow-x: auto; margin-right: -16px; padding-right: 16px; scrollbar-width: none; }
+    .chip { flex: none; }
+    .steps span { display: none; }
+  }
+</style>
+</head>
+<body data-api-base="">
+<header class="top">
+  <a class="brand" href="/">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="var(--teal)"/><path d="M13 7h6v6h6v6h-6v6h-6v-6H7v-6h6z" fill="#fff"/></svg>
+    <span><b>Merinco</b><small>Vật tư y tế chính hãng</small></span>
+  </a>
+  <div class="badges">
+    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg>Sản phẩm chính hãng</span>
+    <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16v12H4z"/><path d="M8 7V5h8v2"/><path d="M12 11v4M10 13h4"/></svg>Hơn 300 sản phẩm</span>
+  </div>
+</header>
+
+<main>
+  <section class="intro" aria-labelledby="hero-title">
+    <span class="eyebrow">Tư vấn trực tuyến</span>
+    <h1 id="hero-title">Tìm đúng vật tư y tế,<br><em>biết giá ngay</em>.</h1>
+    <p class="lead">Hãy cho trợ lý biết bạn đang tìm gì: máy đo huyết áp, băng gạc, vớ y khoa… Trợ lý sẽ giúp bạn chọn đúng sản phẩm, phân loại, quy cách và báo giá từ danh mục của Merinco.</p>
+
+    <p class="label" id="chips-label">Tìm nhanh</p>
+    <div class="chips" role="group" aria-labelledby="chips-label">
+      <button class="chip" type="button">Máy đo huyết áp</button>
+      <button class="chip" type="button">Que thử đường huyết</button>
+      <button class="chip" type="button">Băng gạc vết thương</button>
+      <button class="chip" type="button">Vớ nén y khoa</button>
+      <button class="chip" type="button">Máy tạo oxy</button>
+      <button class="chip" type="button">Máy xông khí dung</button>
+      <button class="chip" type="button">Túi hậu môn nhân tạo</button>
+      <button class="chip" type="button">Nhiệt kế điện tử</button>
+    </div>
+
+    <article class="product" id="product" hidden aria-live="polite">
+      <p class="label">Sản phẩm bạn đang xem</p>
+      <h2 id="product-name"></h2>
+      <p class="meta" id="product-meta"></p>
+      <p class="desc" id="product-desc"></p>
+      <div class="buy" id="product-buy" hidden>
+        <span class="unit" id="product-unit"></span>
+        <span class="price" id="product-price"></span>
+      </div>
+    </article>
+
+    <p class="note">Trợ lý chỉ cung cấp thông tin sản phẩm và giá, không thay thế tư vấn của bác sĩ hay dược sĩ.</p>
+  </section>
+
+  <section class="chat" id="chat" aria-label="Trò chuyện với trợ lý Merinco">
+    <div class="chat-head">
+      <div class="avatar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6z" fill="#fff"/></svg></div>
+      <div class="chat-title">
+        <b>Trợ lý Merinco</b>
+        <span class="status" id="status">Đang kết nối…</span>
+      </div>
+      <button class="icon-btn" id="reset" type="button" title="Bắt đầu cuộc trò chuyện mới">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+        <span>Mới</span>
+      </button>
+    </div>
+    <ol class="steps" id="steps" aria-label="Tiến trình">
+      <li data-step="0"><span>Tìm</span></li>
+      <li data-step="1"><span>Sản phẩm</span></li>
+      <li data-step="2"><span>Phân loại</span></li>
+      <li data-step="3"><span>Quy cách</span></li>
+      <li data-step="4"><span>Báo giá</span></li>
+    </ol>
+    <div class="messages" id="messages" aria-live="polite"></div>
+    <form class="composer" id="composer">
+      <textarea id="input" rows="1" placeholder="Nhập tin nhắn…" aria-label="Tin nhắn" maxlength="4000"></textarea>
+      <button class="send" id="send" type="submit" aria-label="Gửi" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+    </form>
+    <p class="fine">Vui lòng không gửi số thẻ, tài khoản ngân hàng hay mật khẩu.</p>
+  </section>
+</main>
+
+<footer>© Merinco · Vật tư y tế</footer>
+
+<script>
+(() => {
+  const API_BASE = (document.body.dataset.apiBase || "").replace(/\/$/, "");
+  const PROCESS = "medical-supply-inquiry";
+  const STORE_KEY = "merinco.chat.conversationId";
+  // Where each state of the process sits on the progress bar.
+  const STEP = { find_product: 0, choose_product: 1, choose_variant: 2, choose_unit: 3, show_price: 4, done: 5 };
+
+  const messages = document.getElementById("messages");
+  const input = document.getElementById("input");
+  const send = document.getElementById("send");
+  const statusLine = document.getElementById("status");
+  const chips = [...document.querySelectorAll(".chip")];
+
+  let conversationId = null;
+  let state = null;       // id of the conversation's current state
+  let closed = false;     // the conversation reached its end and takes no more messages
+  let busy = false;
+
+  /** Calls the API and turns a ProblemDetail response into an Error carrying its status. */
+  async function api(method, path, body) {
+    const response = await fetch(API_BASE + path, {
+      method,
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const text = await response.text();
+    let payload = null;
+    try { payload = text ? JSON.parse(text) : null; } catch { /* not JSON */ }
+    if (!response.ok) {
+      const error = new Error(payload?.detail || `${response.status} ${response.statusText}`);
+      error.status = response.status;
+      throw error;
+    }
+    return payload;
+  }
+
+  /** What to tell the customer when a call fails, in words they can act on. */
+  function problem(e) {
+    if (e.status === 502) return "Trợ lý đang phản hồi chậm. Bạn vui lòng gửi lại tin nhắn.";
+    if (e.status === 409) return "Tin nhắn trước của bạn vẫn đang được xử lý. Vui lòng đợi một chút rồi thử lại.";
+    if (e.status >= 500) return "Đã có lỗi xảy ra. Bạn vui lòng thử lại sau giây lát.";
+    if (!e.status) return "Không kết nối được với trợ lý. Bạn hãy kiểm tra kết nối mạng và thử lại.";
+    return e.message;
+  }
+
+  function remember(id) {
+    try { id ? sessionStorage.setItem(STORE_KEY, id) : sessionStorage.removeItem(STORE_KEY); } catch { /* storage blocked */ }
+  }
+  function recall() {
+    try { return sessionStorage.getItem(STORE_KEY); } catch { return null; }
+  }
+
+  function scrollDown() { messages.scrollTop = messages.scrollHeight; }
+  function add(text, who) {
+    const el = document.createElement("div");
+    el.className = "msg " + who;
+    el.textContent = text;
+    messages.appendChild(el);
+    scrollDown();
+  }
+  function notice(text, action) {
+    const el = document.createElement("div");
+    el.className = "notice";
+    el.textContent = text;
+    if (action) {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = action.label;
+      b.addEventListener("click", () => { el.remove(); action.run(); });
+      el.appendChild(b);
+    }
+    messages.appendChild(el);
+    scrollDown();
+  }
+  function typing() {
+    const el = document.createElement("div");
+    el.className = "typing"; el.setAttribute("aria-label", "Trợ lý đang trả lời");
+    el.innerHTML = "<i></i><i></i><i></i>";
+    messages.appendChild(el);
+    scrollDown();
+    return el;
+  }
+
+  /**
+   * Offers the answers the server says the question accepts, such as the products matching the
+   * search; clicking one sends its label as the reply, as if it had been typed.
+   */
+  function offerChoices(conversation) {
+    messages.querySelector(".quick")?.remove();
+    const labels = (conversation?.choices?.options || []).map(o => o.label);
+    if (!labels.length || closed) return;
+    const row = document.createElement("div");
+    row.className = "quick";
+    row.setAttribute("role", "group");
+    row.setAttribute("aria-label", "Gợi ý trả lời");
+    labels.forEach(label => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = label;
+      b.addEventListener("click", () => { if (!busy) sendMessage(label); });
+      row.appendChild(b);
+    });
+    messages.appendChild(row);
+    scrollDown();
+  }
+
+  function setBusy(value) {
+    busy = value;
+    input.disabled = busy || closed || !conversationId;
+    send.disabled = input.disabled || !input.value.trim();
+    input.placeholder = closed ? "Cuộc trò chuyện đã kết thúc" : "Nhập tin nhắn…";
+    chips.forEach(c => c.disabled = busy);
+    if (!busy && !input.disabled && window.matchMedia("(min-width: 901px)").matches) input.focus();
+  }
+  function setStatus(text, offline) {
+    statusLine.textContent = text;
+    statusLine.classList.toggle("offline", !!offline);
+  }
+
+  function renderSteps() {
+    const at = STEP[state] ?? 0;
+    document.querySelectorAll("#steps li").forEach(li => {
+      const step = Number(li.dataset.step);
+      li.classList.toggle("done", step < at);
+      li.classList.toggle("now", step === at);
+    });
+  }
+
+  /** Shows the product the customer is looking at, from what the catalog returned into the conversation. */
+  function renderProduct(data) {
+    const card = document.getElementById("product");
+    if (!data?.productName) { card.hidden = true; return; }
+    card.hidden = false;
+    document.getElementById("product-name").textContent = data.productName;
+    const brand = [data.productBrandName, data.productBrandCountry].filter(Boolean).join(" · ");
+    document.getElementById("product-meta").textContent = [brand, data.productCategory].filter(Boolean).join(" — ");
+    const desc = document.getElementById("product-desc");
+    desc.textContent = data.productDescription || "";
+    desc.hidden = !data.productDescription;
+    const chosenUnit = data.sellableUnitLabel && data.sellableUnitProductCode === data.productCode;
+    document.getElementById("product-buy").hidden = !chosenUnit;
+    if (chosenUnit) {
+      const price = data.sellableUnitPrice;
+      document.getElementById("product-unit").textContent =
+        data.sellableUnitSaleUom + (Number(data.sellableUnitQuantity) > 1 ? " x" + data.sellableUnitQuantity : "");
+      document.getElementById("product-price").textContent = price == null
+        ? "Liên hệ báo giá"
+        : new Intl.NumberFormat("vi-VN").format(price) + " đ";
+    }
+  }
+
+  function applyConversation(conversation) {
+    state = conversation?.currentState?.id || null;
+    closed = conversation?.status === "COMPLETED";
+    renderSteps();
+    renderProduct(conversation?.collectedData);
+    offerChoices(conversation);
+    if (closed) {
+      remember(null);
+      notice("Cuộc trò chuyện đã kết thúc.", { label: "Tìm sản phẩm khác", run: () => startConversation() });
+    }
+  }
+
+  async function startConversation(firstMessage) {
+    messages.innerHTML = '<div class="day">Hôm nay</div>';
+    conversationId = null; closed = false; state = null;
+    remember(null);
+    renderSteps(); renderProduct(null);
+    setBusy(true);
+    const dots = typing();
+    try {
+      const result = await api("POST", "/api/conversations", { processId: PROCESS });
+      conversationId = result.conversation.id;
+      remember(conversationId);
+      dots.remove();
+      add(result.greeting.content, "bot");
+      applyConversation(result.conversation);
+      setStatus("Đang trực tuyến");
+    } catch (e) {
+      dots.remove();
+      setStatus("Mất kết nối", true);
+      notice(problem(e), { label: "Thử lại", run: () => startConversation(firstMessage) });
+      return;
+    } finally {
+      setBusy(false);
+    }
+    if (firstMessage) sendMessage(firstMessage);
+  }
+
+  /** Picks up the conversation from earlier in this browser tab, or starts a new one. */
+  async function resumeOrStart() {
+    const saved = recall();
+    if (!saved) return startConversation();
+    messages.innerHTML = '<div class="day">Hôm nay</div>';
+    setBusy(true);
+    try {
+      const [conversation, history] = await Promise.all([
+        api("GET", `/api/conversations/${saved}`),
+        api("GET", `/api/conversations/${saved}/messages`),
+      ]);
+      if (conversation.processId !== PROCESS || conversation.status !== "ACTIVE") throw new Error("not resumable");
+      conversationId = saved;
+      history.forEach(m => add(m.content, m.role === "USER" ? "me" : "bot"));
+      applyConversation(conversation);
+      setStatus("Đang trực tuyến");
+      setBusy(false);
+    } catch {
+      setBusy(false);
+      return startConversation();
+    }
+  }
+
+  async function sendMessage(text) {
+    if (busy || closed || !conversationId) return;
+    messages.querySelector(".quick")?.remove();
+    add(text, "me");
+    setBusy(true);
+    const dots = typing();
+    try {
+      const turn = await api("POST", `/api/conversations/${conversationId}/messages`, { content: text });
+      dots.remove();
+      add(turn.reply.content, "bot");
+      setStatus("Đang trực tuyến");
+      applyConversation(turn.conversation);
+    } catch (e) {
+      dots.remove();
+      if (e.status === 404) {
+        conversationId = null; remember(null);
+        notice("Cuộc trò chuyện trước đã hết hạn.", { label: "Bắt đầu lại", run: () => startConversation() });
+      } else {
+        if (!e.status) setStatus("Mất kết nối", true);
+        notice(problem(e));
+        if (!input.value.trim()) input.value = text;   // give the message back so it can be resent
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  // A quick search asks straight away when the chat is still at the first question; otherwise it
+  // starts a fresh chat, since the customer is looking for something new.
+  chips.forEach(chip => chip.addEventListener("click", () => {
+    if (busy) return;
+    const text = "Tôi đang tìm " + chip.textContent.toLowerCase();
+    if (conversationId && !closed && state === "find_product") sendMessage(text);
+    else startConversation(text);
+    document.getElementById("chat").scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }));
+
+  document.getElementById("reset").addEventListener("click", () => { if (!busy) startConversation(); });
+  input.addEventListener("input", () => {
+    send.disabled = busy || closed || !conversationId || !input.value.trim();
+    input.style.height = "auto";
+    input.style.height = input.scrollHeight + input.offsetHeight - input.clientHeight + "px";
+  });
+  input.addEventListener("keydown", e => {
+    // Enter sends; Shift+Enter, or Enter while an IME is composing Vietnamese, does not.
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+      e.preventDefault();
+      document.getElementById("composer").requestSubmit();
+    }
+  });
+  document.getElementById("composer").addEventListener("submit", e => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text || busy || closed) return;
+    input.value = ""; input.style.height = "auto";
+    sendMessage(text);
+  });
+
+  resumeOrStart();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LANDBANK Business Loan</title>
+<link rel="icon" href="assets/icon.ico" type="image/x-icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  /* Design preview only. Futuristic direction: LANDBANK navy deepened to a night ground,
+     brand green and sky blue turned into light. One committed dark theme. */
+  :root {
+    --night: #050a18;
+    --night-2: #0a1430;
+    --navy: #192951;
+    --glass: rgba(148, 190, 255, .06);
+    --glass-2: rgba(148, 190, 255, .10);
+    --edge: rgba(150, 200, 255, .16);
+    --edge-strong: rgba(150, 220, 255, .32);
+    --green: #3fd46a;          /* brand green, lit for a dark ground */
+    --green-deep: #26922c;     /* brand green as printed */
+    --sky: #6fc3f5;            /* brand sky blue, lit */
+    --text: #e8eefb;
+    --muted: #9aa9c7;
+    --faint: #6c7a99;
+    --on-green: #03140a;
+    --glow: 0 0 0 1px rgba(63, 212, 106, .35), 0 8px 30px -6px rgba(63, 212, 106, .55);
+    --display: "Unbounded", "Segoe UI", system-ui, sans-serif;
+    --sans: "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { scroll-behavior: smooth; background: var(--night); }
+  body {
+    margin: 0; min-height: 100%;
+    background: var(--night);
+    color: var(--text);
+    font: 16px/1.6 var(--sans);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  img { max-width: 100%; display: block; }
+  a { color: var(--sky); }
+  h1, h2, h3 { margin: 0; text-wrap: balance; }
+  p { margin: 0; }
+  .wrap { position: relative; width: 100%; max-width: 1180px; margin-inline: auto; padding-inline: 20px; }
+  :focus-visible { outline: 2px solid var(--sky); outline-offset: 3px; border-radius: 8px; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .grad { background: linear-gradient(92deg, var(--green) 10%, var(--sky) 90%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* Ambient sky: slow aurora behind everything */
+  .sky { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+  .sky::before, .sky::after {
+    content: ""; position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%; filter: blur(90px); opacity: .5;
+    animation: drift 26s ease-in-out infinite alternate;
+  }
+  .sky::before { background: radial-gradient(circle, rgba(63,212,106,.55), transparent 60%); left: -20vmax; top: -30vmax; }
+  .sky::after { background: radial-gradient(circle, rgba(111,195,245,.5), transparent 60%); right: -25vmax; top: 10vmax; animation-delay: -13s; }
+  @keyframes drift { to { transform: translate(8vmax, 6vmax) scale(1.1); } }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    min-height: 48px; padding: 0 24px; border-radius: 999px; cursor: pointer;
+    font: 600 16px/1 var(--sans); text-decoration: none; border: 1px solid transparent;
+    transition: transform .15s, box-shadow .2s, background .2s, border-color .2s;
+  }
+  .btn svg { width: 20px; height: 20px; flex: none; }
+  .btn-primary { background: linear-gradient(95deg, var(--green), #5fe3a0); color: var(--on-green); box-shadow: var(--glow); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 0 0 1px rgba(63,212,106,.6), 0 12px 40px -6px rgba(63,212,106,.75); }
+  .btn-glass { background: var(--glass); color: var(--text); border-color: var(--edge-strong); backdrop-filter: blur(10px); }
+  .btn-glass:hover { background: var(--glass-2); border-color: var(--sky); }
+  .btn-lg { min-height: 58px; padding: 0 30px; font-size: 17px; }
+
+  /* Mono labels */
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 10px;
+    font: 500 12.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--green);
+  }
+  .eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 1px; background: var(--green); box-shadow: 0 0 10px var(--green); }
+
+  /* Top bar */
+  .topbar {
+    position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+    background: rgba(5, 10, 24, .72); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--edge);
+  }
+  .topbar .wrap { display: flex; align-items: center; gap: 24px; min-height: 68px; }
+  .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+  .brand img { width: 32px; height: 32px; }
+  .brand b { font: 600 15px/1 var(--display); letter-spacing: .06em; }
+  .brand span { font: 400 12px/1 var(--mono); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; border-left: 1px solid var(--edge); padding-left: 10px; }
+  .nav { display: flex; gap: 26px; margin-left: auto; }
+  .nav a { color: var(--muted); text-decoration: none; font-weight: 500; font-size: 15px; }
+  .nav a:hover { color: var(--text); }
+  .topbar .btn { min-height: 40px; padding: 0 18px; font-size: 15px; }
+  @media (max-width: 860px) { .nav { display: none; } .topbar .btn { margin-left: auto; } }
+  @media (max-width: 480px) { .brand span, .topbar-label { display: none; } .topbar .btn { padding: 0 12px; } }
+
+  /* Hero with a wireframe field receding to the horizon (terraces, drawn as light) */
+  .hero { position: relative; overflow: hidden; }
+  .field {
+    position: absolute; left: -50%; right: -50%; bottom: -10%; height: 70%; z-index: 0; pointer-events: none;
+    background:
+      repeating-linear-gradient(90deg, rgba(63,212,106,.55) 0 1px, transparent 1px 64px),
+      repeating-linear-gradient(0deg, rgba(111,195,245,.45) 0 1px, transparent 1px 64px);
+    transform: perspective(520px) rotateX(62deg); transform-origin: bottom center;
+    mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.6) 40%, transparent 90%);
+    -webkit-mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.6) 40%, transparent 90%);
+    animation: scan 6s linear infinite;
+  }
+  @keyframes scan { to { background-position: 0 0, 0 64px; } }
+  .hero .wrap {
+    position: relative; z-index: 1;
+    display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 56px; align-items: center;
+    padding-block: 72px 110px;
+  }
+  .status {
+    display: inline-flex; align-items: center; gap: 10px; padding: 7px 14px 7px 10px; border-radius: 999px;
+    background: var(--glass); border: 1px solid var(--edge); font: 500 12.5px/1 var(--mono); letter-spacing: .06em; color: var(--muted);
+  }
+  .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(63,212,106,.6); animation: ping 2s infinite; }
+  @keyframes ping { 70% { box-shadow: 0 0 0 8px rgba(63,212,106,0); } 100% { box-shadow: 0 0 0 0 rgba(63,212,106,0); } }
+  .hero h1 {
+    margin-top: 24px; font: 500 clamp(34px, 4.8vw, 60px)/1.08 var(--display); letter-spacing: -.02em;
+  }
+  .hero .lede { margin-top: 22px; font-size: 18.5px; color: var(--muted); max-width: 33em; }
+  .cta-row { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 34px; }
+  .cta-note { font: 400 13px/1.5 var(--mono); color: var(--faint); max-width: 22em; }
+  .who { margin-top: 40px; display: grid; gap: 12px; }
+  .who strong { font: 500 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--faint); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { padding: 6px 12px; border-radius: 8px; background: var(--glass); border: 1px solid var(--edge); font-size: 14px; color: var(--text); }
+  @media (max-width: 920px) {
+    .hero .wrap { grid-template-columns: 1fr; gap: 48px; padding-block: 48px 80px; }
+  }
+
+  /* AI orb: the assistant's face */
+  .orb {
+    position: relative; flex: none; width: 44px; height: 44px; border-radius: 50%;
+    background:
+      radial-gradient(circle at 35% 30%, #ffffff 0 6%, transparent 22%),
+      radial-gradient(circle at 60% 70%, rgba(111,195,245,.95), transparent 55%),
+      radial-gradient(circle at 30% 60%, rgba(63,212,106,.95), transparent 60%),
+      #0b2a3a;
+    box-shadow: 0 0 18px rgba(63,212,106,.55), inset 0 0 10px rgba(255,255,255,.25);
+    animation: breathe 4s ease-in-out infinite;
+  }
+  .orb::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 1px solid rgba(111,195,245,.45); animation: ring 3s ease-out infinite; }
+  @keyframes breathe { 50% { box-shadow: 0 0 28px rgba(63,212,106,.8), inset 0 0 12px rgba(255,255,255,.35); } }
+  @keyframes ring { from { transform: scale(.9); opacity: 1; } to { transform: scale(1.35); opacity: 0; } }
+
+  /* Holographic chat preview: the one animated edge on the page */
+  .preview {
+    position: relative; margin: 0; border-radius: 24px; padding: 1px; isolation: isolate;
+    background: conic-gradient(from var(--a, 0deg), rgba(63,212,106,.9), rgba(111,195,245,.15) 25%, rgba(111,195,245,.9) 50%, rgba(63,212,106,.15) 75%, rgba(63,212,106,.9));
+    animation: spin 8s linear infinite;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,.8), 0 0 60px -10px rgba(63,212,106,.35);
+  }
+  @property --a { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+  @keyframes spin { to { --a: 360deg; } }
+  .preview-inner { border-radius: 23px; background: rgba(8, 16, 38, .92); backdrop-filter: blur(20px); overflow: hidden; display: flex; flex-direction: column; }
+  .ai-head { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--edge); }
+  .ai-head b { display: block; font: 600 14px/1.2 var(--display); letter-spacing: .02em; }
+  .ai-head small { font: 400 12px/1.4 var(--mono); color: var(--green); letter-spacing: .04em; }
+  .preview-body { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .preview .msg { font-size: 14.5px; max-width: 88%; padding: 10px 14px; }
+  .preview-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .preview-chips span { border: 1px solid rgba(63,212,106,.55); color: var(--green); border-radius: 999px; padding: 6px 12px; font-size: 13px; font-weight: 600; background: rgba(63,212,106,.06); }
+  .preview-input {
+    display: flex; align-items: center; gap: 10px; margin: 6px 16px 0; padding: 6px 6px 6px 16px;
+    border: 1px solid var(--edge-strong); border-radius: 999px; background: rgba(255,255,255,.03); cursor: pointer;
+    font: 15px var(--sans); color: var(--muted); text-align: left; transition: border-color .2s, box-shadow .2s;
+  }
+  .preview-input:hover { border-color: var(--green); box-shadow: 0 0 0 4px rgba(63,212,106,.12), 0 0 30px -6px rgba(63,212,106,.6); }
+  .preview-input > span:first-child { flex: 1; }
+  .preview-input .send { width: 40px; height: 40px; }
+  .preview figcaption { padding: 12px 20px 16px; font: 400 11.5px/1.5 var(--mono); color: var(--faint); text-align: center; letter-spacing: .03em; }
+
+  /* Sections */
+  section.block { padding-block: 96px; position: relative; }
+  .section-head { display: grid; gap: 14px; max-width: 680px; margin-bottom: 44px; }
+  .section-head h2 { font: 500 clamp(26px, 3.4vw, 40px)/1.15 var(--display); letter-spacing: -.015em; }
+  .section-head p { color: var(--muted); font-size: 17px; }
+  .rule { height: 1px; background: linear-gradient(90deg, transparent, var(--edge-strong), transparent); }
+
+  /* How it works: a real sequence, so it is numbered */
+  .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; position: relative; counter-reset: step; }
+  .steps::before {
+    content: ""; position: absolute; left: 8%; right: 8%; top: 43px; height: 1px;
+    background: linear-gradient(90deg, var(--green), var(--sky)); opacity: .5;
+  }
+  .step {
+    position: relative; display: grid; gap: 14px; align-content: start; padding: 26px; border-radius: 20px;
+    background: linear-gradient(180deg, var(--glass-2), var(--glass)); border: 1px solid var(--edge);
+    backdrop-filter: blur(12px);
+  }
+  .step-top { display: flex; align-items: center; justify-content: space-between; }
+  .step-icon {
+    width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+    background: var(--night-2); border: 1px solid var(--edge-strong); color: var(--green); box-shadow: 0 0 20px -4px rgba(63,212,106,.6);
+  }
+  .step-icon svg { width: 20px; height: 20px; }
+  .step-top span { font: 500 12px/1 var(--mono); color: var(--faint); letter-spacing: .1em; }
+  .step h3 { font: 600 18px/1.3 var(--sans); }
+  .step p { color: var(--muted); font-size: 15.5px; }
+  .link-btn { background: none; border: 0; padding: 0; font: 600 15px var(--sans); color: var(--green); cursor: pointer; justify-self: start; display: inline-flex; gap: 6px; align-items: center; }
+  .link-btn:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .aside-note { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 10px 24px; font: 400 13px/1.5 var(--mono); color: var(--muted); }
+  .aside-note span::before { content: "› "; color: var(--green); }
+  @media (max-width: 860px) {
+    .steps { grid-template-columns: 1fr; }
+    .steps::before { left: 43px; right: auto; top: 30px; bottom: 30px; width: 1px; height: auto; background: linear-gradient(180deg, var(--green), var(--sky)); }
+  }
+
+  /* Requirements */
+  .req-layout { display: grid; grid-template-columns: 310px minmax(0, 1fr); gap: 32px; align-items: start; }
+  .req-aside { position: sticky; top: 96px; display: grid; gap: 16px; }
+  .tabs { display: grid; gap: 8px; }
+  .tab {
+    text-align: left; padding: 15px 16px; border-radius: 14px; border: 1px solid var(--edge);
+    background: var(--glass); color: var(--text); font: 600 15px/1.35 var(--sans); cursor: pointer; display: grid; gap: 4px;
+    transition: border-color .2s, background .2s, box-shadow .2s;
+  }
+  .tab small { font: 400 12px/1.4 var(--mono); color: var(--faint); }
+  .tab:hover { border-color: var(--edge-strong); }
+  .tab[aria-selected="true"] { border-color: rgba(63,212,106,.7); background: rgba(63,212,106,.08); box-shadow: 0 0 30px -10px rgba(63,212,106,.7); }
+  .help-card {
+    padding: 20px; border-radius: 16px; display: grid; gap: 14px;
+    background: radial-gradient(140% 120% at 0% 0%, rgba(63,212,106,.18), transparent 60%), var(--night-2);
+    border: 1px solid var(--edge);
+  }
+  .help-card .row { display: flex; gap: 12px; align-items: center; }
+  .help-card .orb { width: 34px; height: 34px; }
+  .help-card p { font-size: 14.5px; color: var(--muted); }
+  .help-card .btn { min-height: 42px; font-size: 15px; justify-self: start; padding: 0 18px; }
+  .docs { display: grid; gap: 10px; }
+  details.group { background: var(--glass); border: 1px solid var(--edge); border-radius: 16px; transition: border-color .2s; }
+  details.group[open] { border-color: var(--edge-strong); background: var(--glass-2); }
+  details.group summary {
+    list-style: none; cursor: pointer; padding: 17px 20px; display: flex; align-items: center; gap: 12px;
+    font-weight: 600; font-size: 16.5px;
+  }
+  details.group summary::-webkit-details-marker { display: none; }
+  summary .count { margin-left: auto; font: 400 12px/1 var(--mono); color: var(--faint); font-variant-numeric: tabular-nums; }
+  summary .chev { width: 18px; height: 18px; color: var(--muted); transition: transform .2s; flex: none; }
+  details[open] summary .chev { transform: rotate(180deg); color: var(--green); }
+  .group-body { padding: 0 20px 20px; display: grid; gap: 14px; }
+  .group-body h4 { margin: 6px 0 0; font: 500 11.5px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--sky); }
+  .group-body ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
+  .group-body li { position: relative; padding-left: 26px; font-size: 15px; color: #cdd7ea; max-width: 70ch; }
+  .group-body li::before {
+    content: ""; position: absolute; left: 3px; top: 6px; width: 11px; height: 11px; border-radius: 3px;
+    border: 1px solid rgba(63,212,106,.7); box-shadow: 0 0 8px -2px rgba(63,212,106,.8);
+  }
+  @media (max-width: 860px) {
+    .req-layout { grid-template-columns: 1fr; }
+    .req-aside { position: static; }
+    .tabs { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 480px) { .tabs { grid-template-columns: 1fr; } }
+
+  /* Closing */
+  .closing { padding-block: 16px 96px; }
+  .closing-card {
+    position: relative; overflow: hidden; border-radius: 28px; padding: clamp(32px, 6vw, 72px);
+    border: 1px solid var(--edge-strong);
+    background:
+      radial-gradient(80% 120% at 100% 0%, rgba(111,195,245,.28), transparent 60%),
+      radial-gradient(70% 120% at 0% 100%, rgba(63,212,106,.28), transparent 60%),
+      var(--night-2);
+    display: grid; gap: 28px; justify-items: center; text-align: center;
+  }
+  .closing-card::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 4px);
+  }
+  .closing-card .orb { width: 64px; height: 64px; }
+  .closing-card h2 { font: 500 clamp(28px, 4.4vw, 52px)/1.1 var(--display); letter-spacing: -.02em; max-width: 16em; }
+  .closing-card p { color: var(--muted); font-size: 14px; }
+  .closing-card p a { color: var(--text); }
+  .closing-card .cta-row { margin-top: 0; justify-content: center; }
+
+  footer { border-top: 1px solid var(--edge); color: var(--faint); font: 400 12.5px/1.5 var(--mono); padding-block: 26px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; }
+  footer a { color: var(--muted); }
+
+  /* Shared message bubbles (preview card + chat) */
+  .msg { max-width: min(78%, 560px); padding: 12px 16px; border-radius: 18px; font-size: 16.5px; line-height: 1.5; }
+  .msg.bot { align-self: flex-start; background: rgba(148,190,255,.08); border: 1px solid var(--edge); border-bottom-left-radius: 4px; color: var(--text); }
+  .msg.me { align-self: flex-end; background: linear-gradient(120deg, #1f9c47, #1d8a8f); color: #fff; border-bottom-right-radius: 4px; box-shadow: 0 6px 24px -8px rgba(63,212,106,.6); }
+  .send { width: 52px; height: 52px; flex: none; align-self: flex-end; border-radius: 50%; border: 0; background: linear-gradient(135deg, var(--green), var(--sky)); color: var(--on-green); cursor: pointer; display: grid; place-items: center; box-shadow: var(--glow); }
+  .send:disabled { background: rgba(148,190,255,.12); color: var(--faint); box-shadow: none; cursor: default; }
+  .send svg { width: 22px; height: 22px; }
+
+  /* Chat, focus mode */
+  body.chat-open { overflow: hidden; }
+  .chat-backdrop {
+    position: fixed; inset: 0; z-index: 45;
+    background: rgba(2, 5, 14, .72); backdrop-filter: blur(10px) saturate(120%); -webkit-backdrop-filter: blur(10px) saturate(120%);
+    animation: fade .25s ease-out;
+  }
+  @keyframes fade { from { opacity: 0; } }
+  .chat {
+    position: fixed; inset: 0; margin: auto; z-index: 50;
+    width: min(880px, calc(100vw - 48px)); height: min(880px, calc(100dvh - 48px));
+    border-radius: 26px; overflow: hidden; display: flex; flex-direction: column;
+    background:
+      radial-gradient(60% 40% at 50% 0%, rgba(63,212,106,.12), transparent 70%),
+      linear-gradient(180deg, #0b1633, #070d20);
+    border: 1px solid var(--edge-strong);
+    box-shadow: 0 0 0 1px rgba(63,212,106,.12), 0 40px 120px -20px rgba(0,0,0,.9), 0 0 90px -20px rgba(63,212,106,.45);
+    animation: pop .28s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes pop { from { opacity: 0; transform: translateY(18px) scale(.97); } }
+  @media (max-width: 640px) {
+    .chat { width: 100%; height: 100%; border-radius: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  }
+  .chat-head { padding: 18px 20px 18px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid var(--edge); }
+  .chat-head .orb { width: 46px; height: 46px; }
+  .chat-head h2 { font: 600 16px/1.25 var(--display); letter-spacing: .02em; }
+  .chat-head p { font: 400 12.5px/1.4 var(--mono); color: var(--green); letter-spacing: .04em; }
+  .icon-btn { width: 40px; height: 40px; border-radius: 12px; border: 1px solid transparent; background: transparent; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
+  .icon-btn:hover { background: var(--glass-2); border-color: var(--edge); color: var(--text); }
+  .icon-btn svg { width: 20px; height: 20px; }
+  .esc-hint { margin-left: auto; margin-right: 4px; font: 400 11.5px/1 var(--mono); color: var(--faint); border: 1px solid var(--edge); border-radius: 6px; padding: 5px 7px; }
+  @media (max-width: 640px) { .esc-hint { display: none; } .chat-head .icon-btn:first-of-type { margin-left: auto; } }
+  .preview-note { font: 400 12px/1.4 var(--mono); color: #f3c776; background: rgba(243,199,118,.07); padding: 8px 24px; border-bottom: 1px solid rgba(243,199,118,.18); text-align: center; letter-spacing: .02em; }
+  .messages {
+    flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
+    padding-block: 28px; padding-inline: max(20px, calc((100% - 700px) / 2));
+  }
+  .day { align-self: center; font: 400 11.5px/1 var(--mono); color: var(--faint); letter-spacing: .12em; text-transform: uppercase; }
+  .quick { display: flex; flex-wrap: wrap; gap: 10px; }
+  .quick button {
+    border: 1px solid rgba(63,212,106,.55); background: rgba(63,212,106,.06); color: var(--green); border-radius: 999px;
+    padding: 10px 18px; font: 600 15px var(--sans); cursor: pointer; transition: background .2s, box-shadow .2s;
+  }
+  .quick button:hover { background: rgba(63,212,106,.14); box-shadow: 0 0 24px -6px rgba(63,212,106,.7); }
+  .typing { align-self: flex-start; display: flex; gap: 5px; padding: 14px 16px; background: rgba(148,190,255,.08); border: 1px solid var(--edge); border-radius: 18px; border-bottom-left-radius: 4px; }
+  .typing i { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: blink 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: .15s; background: #58cfa8; } .typing i:nth-child(3) { animation-delay: .3s; background: var(--sky); }
+  @keyframes blink { 0%, 60%, 100% { opacity: .25; transform: translateY(0); } 30% { opacity: 1; transform: translateY(-3px); } }
+  .composer {
+    display: flex; gap: 10px; border-top: 1px solid var(--edge);
+    padding-block: 16px 10px; padding-inline: max(20px, calc((100% - 700px) / 2));
+  }
+  .composer textarea {
+    flex: 1; resize: none; border: 1px solid var(--edge-strong); border-radius: 18px; padding: 14px 18px;
+    font: 16.5px/1.45 var(--sans); color: var(--text); max-height: 160px; background: rgba(255,255,255,.03);
+  }
+  .composer textarea::placeholder { color: var(--faint); }
+  .composer textarea:focus { outline: none; border-color: var(--green); box-shadow: 0 0 0 4px rgba(63,212,106,.12), 0 0 30px -8px rgba(63,212,106,.6); }
+  .chat-foot { font: 400 11.5px/1.5 var(--mono); color: var(--faint); text-align: center; padding: 0 20px 14px; }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="sky" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="LANDBANK Business Loan home">
+      <img src="assets/icon.ico" alt="">
+      <b>LANDBANK</b>
+      <span>Business Loan</span>
+    </a>
+    <nav class="nav" aria-label="Page">
+      <a href="#how">How it works</a>
+      <a href="#requirements">Requirements</a>
+    </nav>
+    <button class="btn btn-primary" type="button" data-open-chat><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg><span class="topbar-label">Chat with AI Assistant</span></button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="field" aria-hidden="true"></div>
+    <div class="wrap">
+      <div>
+        <span class="status"><i></i>AI ASSISTANT ONLINE · 24/7</span>
+        <h1>Business capital, <span class="grad">one conversation away.</span></h1>
+        <p class="lede">Apply for your LANDBANK business loan by chatting with our AI Assistant, any time of day. No forms, no queues, with real-time updates on your loan status.</p>
+        <div class="cta-row">
+          <button class="btn btn-primary btn-lg" type="button" data-open-chat>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg>
+            Apply with our AI Assistant
+          </button>
+          <p class="cta-note">A few questions at a time. A loan advisor takes it from there.</p>
+        </div>
+        <div class="who">
+          <strong>Open to</strong>
+          <div class="chips">
+            <span class="chip">Individuals</span>
+            <span class="chip">Sole proprietorships</span>
+            <span class="chip">Cooperatives</span>
+            <span class="chip">Partnerships</span>
+            <span class="chip">Corporations &amp; OPCs</span>
+          </div>
+        </div>
+      </div>
+
+      <figure class="preview" aria-labelledby="preview-cap">
+        <div class="preview-inner">
+          <div class="ai-head">
+            <span class="orb" aria-hidden="true"></span>
+            <div>
+              <b>LANDBANK AI Assistant</b>
+              <small>● online · replies instantly</small>
+            </div>
+          </div>
+          <div class="preview-body" aria-hidden="true">
+            <div class="msg bot">Hi! I can help you find a business loan that fits your needs and connect you with one of our loan advisors. May I have your name to start with?</div>
+            <div class="msg me">I'm Maria. I need working capital for my rice trading business.</div>
+            <div class="msg bot">Thanks, Maria! How is your business registered? For example, with the DTI as a sole proprietorship, or with the SEC or CDA.</div>
+            <div class="preview-chips"><span>Sole proprietorship</span><span>Corporation</span><span>Not registered yet</span></div>
+          </div>
+          <button class="preview-input" type="button" data-open-chat>
+            <span>Type your message…</span>
+            <span class="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </button>
+          <figcaption id="preview-cap">EXAMPLE CONVERSATION · START YOURS FOR YOUR BUSINESS</figcaption>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <div class="wrap"><div class="rule"></div></div>
+
+  <section class="block" id="how">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">How it works</span>
+        <h2>From first message to a <span class="grad">loan advisor's call</span></h2>
+      </div>
+      <div class="steps">
+        <article class="step">
+          <div class="step-top">
+            <span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg></span>
+            <span>STEP 01</span>
+          </div>
+          <h3>Chat with the AI Assistant</h3>
+          <p>Tell it about your business and what the loan is for. It asks one or two questions at a time, so there are no long forms.</p>
+          <button class="link-btn" type="button" data-open-chat>Start a chat →</button>
+        </article>
+        <article class="step">
+          <div class="step-top">
+            <span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/><path d="m9 10 2 2 4-4"/></svg></span>
+            <span>STEP 02</span>
+          </div>
+          <h3>Verify your mobile number</h3>
+          <p>Confirm your details, then enter the one-time code we text you so our advisor can reach the right person.</p>
+        </article>
+        <article class="step">
+          <div class="step-top">
+            <span class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span>
+            <span>STEP 03</span>
+          </div>
+          <h3>A loan advisor follows up</h3>
+          <p>A LANDBANK loan advisor contacts you with exact rates, fees and next steps for your application.</p>
+        </article>
+      </div>
+      <div class="aside-note">
+        <span>Ask for your loan status anytime</span>
+        <span>Works on any device</span>
+        <span>Available 24/7</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="requirements">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Before you apply</span>
+        <h2>Prepare these documents</h2>
+        <p>Requirements depend on how your business is registered. Choose your borrower type to see the list.</p>
+      </div>
+      <div class="req-layout">
+        <aside class="req-aside">
+          <div class="tabs" role="tablist" aria-label="Borrower type">
+            <button class="tab" role="tab" id="tab-isp" aria-controls="docs" aria-selected="true" data-type="isp">
+              Individual / Sole proprietorship
+              <small>DTI-registered, or not yet registered</small>
+            </button>
+            <button class="tab" role="tab" id="tab-cpc" aria-controls="docs" aria-selected="false" data-type="cpc">
+              Cooperative / Partnership / Corporation
+              <small>Incl. one-person corporations · CDA or SEC</small>
+            </button>
+          </div>
+          <div class="help-card">
+            <div class="row">
+              <span class="orb" aria-hidden="true"></span>
+              <p>Not sure which documents apply to you? The AI Assistant can walk you through them.</p>
+            </div>
+            <button class="btn btn-glass" type="button" data-open-chat>Ask the AI Assistant</button>
+          </div>
+        </aside>
+        <div class="docs" id="docs" role="tabpanel" aria-labelledby="tab-isp"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="closing">
+    <div class="wrap">
+      <div class="closing-card">
+        <span class="orb" aria-hidden="true"></span>
+        <h2>Your future, <span class="grad">powered by LANDBANK.</span></h2>
+        <div class="cta-row">
+          <button class="btn btn-primary btn-lg" type="button" data-open-chat><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg>Start your loan application</button>
+        </div>
+        <p>*<a href="#terms">Terms &amp; Conditions</a> apply.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer id="terms">
+  <div class="wrap">
+    <span>© 2026 Land Bank of the Philippines · Design preview</span>
+    <a href="#terms">Terms &amp; Conditions</a>
+  </div>
+</footer>
+
+<!-- Chat panel: static mock, not connected to the chatbot -->
+<div class="chat-backdrop" id="chat-backdrop" hidden></div>
+<section class="chat" id="chat" role="dialog" aria-modal="true" aria-labelledby="chat-title" hidden>
+  <div class="chat-head">
+    <span class="orb" aria-hidden="true"></span>
+    <div>
+      <h2 id="chat-title">LANDBANK AI Assistant</h2>
+      <p>● online · replies instantly</p>
+    </div>
+    <span class="esc-hint">ESC</span>
+    <button class="icon-btn" type="button" id="chat-reset" aria-label="Start over">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+    </button>
+    <button class="icon-btn" type="button" id="chat-close" aria-label="Close chat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+    </button>
+  </div>
+  <div class="preview-note">DESIGN PREVIEW · replies are placeholders, the assistant is not connected yet</div>
+  <div class="messages" id="messages" aria-live="polite"></div>
+  <form class="composer" id="composer">
+    <label class="visually-hidden" for="chat-input">Message</label>
+    <textarea id="chat-input" rows="1" placeholder="Type your message…"></textarea>
+    <button class="send" type="submit" id="send" aria-label="Send" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </form>
+  <p class="chat-foot">Never share passwords, card numbers or one-time PINs other than the code we text you.</p>
+</section>
+
+<script>
+  /* ---------- Requirements (content from the current portal) ---------- */
+  const security = [
+    ["", ["Photocopy of Transfer Certificate of Title (TCT) / Condominium Certificate of Title (CCT)",
+          "Photocopy of Tax Declaration (for land and improvement)",
+          "Location / vicinity map",
+          "Land Transportation Office (LTO) Official Receipt (OR) / Certificate of Registration (CR) or Deed of Sale of Motor Vehicle",
+          "Reservation Agreement, Contract to Sell or Statement of Account (for Deed of Assignment (DOA) accounts only)"]],
+    ["If secured by a continuing suretyship", ["Basic documents (as enumerated in this form) of the surety", "Income documents (as enumerated in this form) of the surety"]],
+    ["If construction loan", ["Building / floor plan of proposed improvement", "Bill of materials", "Specification of proposed finishes", "Building permit"]],
+  ];
+  const postApproval = [
+    ["Real estate collateral-backed loans", ["Original owner's copy of TCT/CCT", "Original Tax Clearance", "Certified true copy of latest Tax Declaration",
+      "Insurance policy/ies (for properties with improvements)", "Master Deed of Declaration (for condominium only)",
+      "Photocopy of latest full-year Real Estate Tax Receipt (RETR)", "Price quotation of the property (for property acquisition)",
+      "Affidavit of Consent to Mortgage Family Home", "Others (please specify)"]],
+  ];
+  const DOCS = {
+    isp: [
+      ["Basic documents", [["", ["Filled-out and signed application form", "Clear copy of one (1) valid government-issued ID", "Marriage contract, if applicable"]],
+        ["Proof of business registration", ["Certificate of Registration with the Bureau of Internal Revenue (BIR)", "Certificate of Registration with the Department of Trade and Industry (DTI)",
+          "Certificate of Registration with the Securities and Exchange Commission (SEC)", "Certificate of Registration with the Farmers and Fisherfolk Enterprise Development Information System (FFEDIS)",
+          "Barangay permit", "Mayor's permit"]]]],
+      ["Personal income documents", [["", ["Latest Income Tax Return (ITR) or BIR Form 2316", "Latest payslip for the past 2 months",
+        "Certificate of Employment (COE) with salary, or employment contract", "Latest crew contract (for seafarers)", "Proof of remittance for the past 6 months",
+        "Bank statements or photocopy of passbook for the past 6 months", "Lease contract (for rental income)", "Proof of other income"]]]],
+      ["Security documents", security.concat([["If refinancing / loan takeout", ["Statement of Account from current lender and official receipts for the past 3 months"]],
+        ["Others", ["Appraisal fee", "Additional security documents"]]])],
+      ["Business documents", [["", ["Photocopy of Audited Financial Statements for the past 3 years with the latest ITR, or in-house or pre-operating financial statements",
+        "Business plan / business proposal", "Photocopy of franchise agreement, if any", "Business background / company profile", "Photocopy of purchase agreement", "Others (please specify)"]]]],
+      ["Other pre-application requirements", [["", ["Billing statement of utilities for the past 3 months",
+        "Statement of Account from the current lender and official receipts for the past 3 months (if loan purpose is refinancing / loan takeout)", "Others (please specify)"]]]],
+      ["Post-approval requirements", postApproval.concat([["Other post-approval requirements", ["General Information Sheet (GIS), if applicable", "Special Power of Attorney, if applicable",
+        "Certificate of Ownership for movable property (e.g., motor vehicles)"]]])],
+    ],
+    cpc: [
+      ["Basic documents", [["", ["Filled-out and signed application form", "Clear copy of one (1) valid government-issued ID of authorized representative, if applicable",
+        "Board / Partnership Resolution or Secretary's Certificate authorizing the loan and naming the persons authorized to transact with the bank and sign documents",
+        "Special Power of Attorney, if applicable", "Certificate of Registration with the Farmers and Fisherfolk Enterprise Development Information System (FFEDIS)"]]]],
+      ["Proof of business registration", [["Cooperative", ["Certificate of Registration with the Cooperative Development Authority (CDA)", "Certificate of Compliance, if applicable", "List of elected officers"]],
+        ["Partnership", ["Certificate of Registration with the Securities and Exchange Commission (SEC)", "Articles of Partnership"]],
+        ["Corporation / One-person corporation", ["Certificate of Registration with the SEC", "General Information Sheet (GIS), if applicable", "Latest amended Articles of Incorporation and By-Laws"]]]],
+      ["Income documents", [["", ["Photocopy of Audited Financial Statements for the past 3 years with the latest Income Tax Return (ITR), or in-house or pre-operating financial statements",
+        "Bank statements or photocopy of passbook for the past 6 months", "Business background / company profile", "Proof of other income, if any"]]]],
+      ["Other supporting documents", [["", ["Billing statement of utilities for the past 3 months",
+        "Statement of Account from the current lender and official receipts for the past 3 months (if loan purpose is refinancing / loan takeout)", "Others (please specify)"]]]],
+      ["Security documents", security.concat([["Others", ["Appraisal fee", "Additional security documents"]]])],
+      ["Post-approval requirements", postApproval.concat([["Other post-approval requirements", ["Certificate of Ownership for movable property (e.g., motor vehicles)"]]])],
+    ],
+  };
+  const chev = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  function renderDocs(type) {
+    document.getElementById("docs").innerHTML = DOCS[type].map(([title, parts], i) => {
+      const count = parts.reduce((n, [, items]) => n + items.length, 0);
+      const body = parts.map(([h, items]) => (h ? `<h4>${esc(h)}</h4>` : "") + `<ul>${items.map(t => `<li>${esc(t)}</li>`).join("")}</ul>`).join("");
+      return `<details class="group"${i === 0 ? " open" : ""}><summary>${esc(title)}<span class="count">${count} items</span>${chev}</summary><div class="group-body">${body}</div></details>`;
+    }).join("");
+  }
+  document.querySelectorAll(".tab").forEach(tab => tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t => t.setAttribute("aria-selected", t === tab));
+    document.getElementById("docs").setAttribute("aria-labelledby", tab.id);
+    renderDocs(tab.dataset.type);
+  }));
+  renderDocs("isp");
+
+  /* ---------- Chat box: open/close + scripted preview only ---------- */
+  const chat = document.getElementById("chat");
+  const backdrop = document.getElementById("chat-backdrop");
+  let opener = null;  // the button that opened the chat, focused again on close
+  const messages = document.getElementById("messages");
+  const input = document.getElementById("chat-input");
+  const send = document.getElementById("send");
+  const GREETING = "Hi! I can help you find a business loan that fits your needs and connect you with one of our loan advisors. What would you like to do today?";
+  const QUICK = ["Apply for a business loan", "Check my application status", "What documents do I need?"];
+  const PLACEHOLDER = "Thanks! This is a design preview, so I can't answer yet. Once connected, I'll guide you step by step.";
+
+  function add(text, who) {
+    const el = document.createElement("div");
+    el.className = "msg " + who;
+    el.textContent = text;
+    messages.appendChild(el);
+    messages.scrollTop = messages.scrollHeight;
+    return el;
+  }
+  function addQuick() {
+    const row = document.createElement("div");
+    row.className = "quick";
+    QUICK.forEach(q => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = q;
+      b.addEventListener("click", () => { row.remove(); userSays(q); });
+      row.appendChild(b);
+    });
+    messages.appendChild(row);
+  }
+  function reset() {
+    messages.innerHTML = '<div class="day">Today</div>';
+    add(GREETING, "bot");
+    addQuick();
+  }
+  function userSays(text) {
+    add(text, "me");
+    const typing = document.createElement("div");
+    typing.className = "typing"; typing.innerHTML = "<i></i><i></i><i></i>";
+    messages.appendChild(typing);
+    messages.scrollTop = messages.scrollHeight;
+    setTimeout(() => { typing.remove(); add(PLACEHOLDER, "bot"); }, 900);
+  }
+  function openChat(e) {
+    opener = e?.currentTarget || null;
+    document.querySelectorAll("[data-open-chat]").forEach(b => b.setAttribute("aria-expanded", "true"));
+    if (!messages.children.length) reset();
+    chat.hidden = false;
+    backdrop.hidden = false;
+    document.body.classList.add("chat-open");
+    document.querySelectorAll("body > header, body > main, body > footer").forEach(el => el.inert = true);
+    input.focus();
+  }
+  function closeChat() {
+    chat.hidden = true;
+    backdrop.hidden = true;
+    document.body.classList.remove("chat-open");
+    document.querySelectorAll("body > header, body > main, body > footer").forEach(el => el.inert = false);
+    document.querySelectorAll("[data-open-chat]").forEach(b => b.setAttribute("aria-expanded", "false"));
+    opener?.focus();
+  }
+  document.querySelectorAll("[data-open-chat]").forEach(b => b.addEventListener("click", openChat));
+  document.getElementById("chat-close").addEventListener("click", closeChat);
+  backdrop.addEventListener("click", closeChat);
+  document.getElementById("chat-reset").addEventListener("click", reset);
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !chat.hidden) closeChat(); });
+  input.addEventListener("input", () => {
+    send.disabled = !input.value.trim();
+    input.style.height = "auto";
+    input.style.height = input.scrollHeight + "px";
+  });
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); document.getElementById("composer").requestSubmit(); }
+  });
+  document.getElementById("composer").addEventListener("submit", e => {
+    e.preventDefault();
+    const text = input.value.trim();
+    if (!text) return;
+    messages.querySelector(".quick")?.remove();
+    input.value = ""; input.style.height = "auto"; send.disabled = true;
+    userSays(text);
+  });
+</script>
+</body>
+</html>

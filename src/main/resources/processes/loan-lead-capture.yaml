@@ -1,0 +1,434 @@
+id: loan-lead-capture
+name: Online loan lead capture
+description: Qualifies a website visitor's business loan interest and captures their contact details for a loan advisor.
+# Follows the BSP Standard Business Loan Application Form (SBLAF, Circular No. 1156): business loans
+# only, to the six applicant-borrower types it defines.
+objective: >
+  Find out who is chatting, confirm the loan is for business, and determine the type of borrower as
+  defined by the SBLAF. Then find out what loan they need, ask whether they want a loan advisor to
+  take it further, and if so collect their business profile and contact details, confirm
+  everything, and verify their phone number with a one-time code so an advisor can follow up.
+instructions: >
+  You are a friendly, concise assistant on a lender's website. Ask for one or two pieces of
+  information at a time. Never promise approval, interest rates, fees or loan amounts; if asked,
+  say a loan advisor will give exact figures. Never ask for ID numbers, business registration or
+  tax numbers, bank account or card details or passwords. The only one-time code you may ask for is
+  the verification code texted to the person's phone in the verify_phone state. Only business loans
+  are offered: loans to finance business operations and capital expenditures, for an existing
+  business or one the person proposes to start. Loans for personal needs such as education,
+  hospitalization, emergencies, travel, household or other personal spending are not offered.
+  Loans are only offered in the Philippines: the borrower and their business must be based in the
+  Philippines.
+greeting: >
+  Hi! I can help you find a business loan that fits your needs and connect you with one of our loan
+  advisors. May I have your name to start with?
+
+fields:
+  - name: contactName
+    type: string
+    description: >
+      Full name of the person chatting. For an INDIVIDUAL or SOLE_PROPRIETORSHIP this is the
+      borrower, the person who owns the business; for any other customer type it is the name of the
+      authorized representative of the cooperative, partnership or corporation.
+  - name: customerType
+    type: enum
+    values: [INDIVIDUAL, SOLE_PROPRIETORSHIP, COOPERATIVE, PARTNERSHIP, ONE_PERSON_CORPORATION, CORPORATION]
+    # Definitions from BSP Circular No. 1156; the registering agency is from the SBLAF checklist of
+    # supporting documents.
+    description: >
+      The type of applicant-borrower, as defined by the BSP for the Standard Business Loan
+      Application Form (SBLAF). Every type borrows for business.
+      INDIVIDUAL: a natural person doing or proposing to do business in their own name, whose
+      business is not registered with the DTI as a sole proprietorship, e.g. a freelancer, a
+      professional, a market vendor, or someone about to start a business.
+      SOLE_PROPRIETORSHIP: a business structure owned by an individual who has full control and
+      authority over the business, registered with the DTI under a business name.
+      COOPERATIVE: an autonomous and duly registered association of persons under the Philippine
+      Cooperative Code of 2008 (R.A. No. 9520), registered with the CDA.
+      PARTNERSHIP: a juridical entity where two or more individuals combine their capital, property,
+      skills or labor for a lawful business for gain, sharing its profits or losses (Civil Code,
+      Art. 1767), registered with the SEC.
+      ONE_PERSON_CORPORATION: a corporation with a single stockholder under the Revised Corporation
+      Code (R.A. No. 11232), registered with the SEC.
+      CORPORATION: a corporation with two or more stockholders under the Revised Corporation Code
+      (R.A. No. 11232), registered with the SEC.
+      Only extract a type the person stated or that follows clearly from their answers about who
+      owns the business and where it is registered; never guess it from the business name alone.
+
+  # Loan need
+  - name: loanPurpose
+    type: enum
+    # The purposes on offer come from the lookup api, which returns the ones allowed for the
+    # customer type already collected, so the list can change without editing this file. They are
+    # seeded from the loan purposes on the BSP Standard Business Loan Application Form (SBLAF).
+    valuesFrom: loanPurposes
+    description: >
+      What the loan is for. Offer only the values listed for this field. Choose OTHER only when none
+      of the others fits what the person described.
+  - name: loanPurposeDetails
+    type: string
+    description: >
+      What the loan will be used for, in a short phrase in the person's own words, e.g. "buy a rice
+      mill" or "stock up for the holiday season". Needed when loanPurpose is OTHER; otherwise only
+      extract it when the person volunteers useful specifics.
+  - name: loanAmount
+    type: number
+    description: >
+      Amount the customer wants to borrow, in Philippine pesos (PHP, ₱). If they give an amount
+      in another currency, ask for it in pesos instead of converting it yourself.
+  - name: wantsToApply
+    type: boolean
+    description: >
+      Whether the person wants to apply and be contacted by a loan advisor, and agrees to have
+      their details stored for that purpose
+
+  # Business profile
+  - name: companyName
+    type: string
+    description: >
+      Registered business name (trade name): the business name registered with the DTI for a
+      SOLE_PROPRIETORSHIP, the name registered with the CDA for a COOPERATIVE, or the name registered
+      with the SEC for a PARTNERSHIP, ONE_PERSON_CORPORATION or CORPORATION. For an INDIVIDUAL, the
+      trade name they do business under, if they use one; never the person's own name.
+  - name: industry
+    type: enum
+    values: [RETAIL, MANUFACTURING, CONSTRUCTION, SERVICES, TECHNOLOGY, AGRICULTURE, TRANSPORT, OTHER]
+    description: Industry the business operates in, or will operate in for a business not started yet
+  - name: totalAssetSize
+    type: enum
+    # Bands follow the Philippine MSME asset-size categories (RA 9501), as used for firm size on
+    # the SBLAF: micro, small, medium, plus large.
+    values: [UP_TO_3M, FROM_3M_TO_15M, FROM_15M_TO_100M, OVER_100M]
+    description: >
+      Total assets of the business, not counting the land its office, plant and equipment stand on,
+      in Philippine pesos (PHP, ₱): up to ₱3 million, ₱3 million to ₱15 million, ₱15 million to
+      ₱100 million, or over ₱100 million. A business not started yet is UP_TO_3M unless the person
+      says otherwise.
+
+  # Contact details
+  - name: city
+    type: string
+    description: >
+      City or municipality in the Philippines the customer is based in, used to route the lead
+      to the nearest branch: where the business is based, or for an INDIVIDUAL whose business has
+      no fixed place or has not started yet, where they live. Only extract it if it is a place
+      inside the Philippines; never extract a place outside the Philippines.
+  - name: phoneNumber
+    type: string
+    description: >
+      Philippine mobile number the advisor should call and the verification code is texted to.
+      Accept it as 09XX XXX XXXX, 9XX XXX XXXX, +63 9XX XXX XXXX or 63 9XX XXX XXXX, and store it
+      as +639 followed by the remaining 9 digits with no spaces or dashes, e.g. +639171234567.
+      Only extract it if it is a valid Philippine mobile number: 10 digits starting with 9 after
+      the country code or leading 0. Never extract a landline or a foreign number.
+  - name: email
+    type: string
+    description: Email address the advisor can write to
+  - name: preferredContactTime
+    type: enum
+    values: [MORNING, AFTERNOON, EVENING, ANYTIME]
+    description: When the customer prefers to be contacted
+
+  # Phone verification
+  - name: otpCode
+    type: string
+    description: >
+      The verification code the person typed after it was texted to their phone, exactly as typed.
+      Only extract it from the person's latest message, never reuse an earlier one.
+
+# A person who turns out to be asking about an application they already made is handed over.
+switchTo: [loan-application-status]
+
+initialState: welcome
+states:
+  - id: welcome
+    objective: >
+      Greet the visitor, ask for their name, and check they are interested in a business loan.
+      If they are, go to identify_customer. If they clearly say they are not interested, or only
+      want a loan for personal needs, go to no_lead.
+    next: [identify_customer, no_lead]
+
+  # Determines the SBLAF applicant-borrower type before anything else, since it decides the loan
+  # purposes on offer and the profile to collect.
+  - id: identify_customer
+    objective: >
+      Confirm the name of the person chatting. Then determine the type of borrower, in this order.
+      First, confirm the loan is for a business, existing or one they plan to start. If it is only
+      for personal needs such as education, hospitalization, emergencies, travel or household
+      spending, politely explain that only business loans are offered and go to no_lead.
+      Then ask who the business belongs to and, if registered, where:
+      a business run by one person in their own name that is not registered with the DTI, or not
+      started yet, is INDIVIDUAL; one owned by one person and registered with the DTI under a
+      business name is SOLE_PROPRIETORSHIP; one registered with the CDA is COOPERATIVE; one
+      registered with the SEC is a PARTNERSHIP if two or more partners share it, a
+      ONE_PERSON_CORPORATION if it has a single stockholder, and a CORPORATION if it has two or more
+      stockholders. Ask one simple question at a time, and skip what the person has already made
+      clear, e.g. "our cooperative" needs no further question. Do not ask for registration numbers.
+      For a cooperative, partnership or corporation, the person must be authorized to represent it;
+      if they are not, suggest an authorized representative contacts us and go to no_lead.
+    requiredFields: [contactName, customerType]
+    next:
+      - state: loan_needs
+      # Exit for a personal loan or someone not authorized, taken while customerType is still uncollected.
+      - state: no_lead
+        back: true
+
+  - id: loan_needs
+    objective: >
+      Find out what the loan is for, offering only the purposes listed for the loanPurpose field,
+      and how much they want to borrow. If the person describes the use rather than picking a
+      purpose, map it to the closest listed purpose, e.g. buying stock or paying suppliers is
+      working capital, a delivery truck is equipment/motor vehicles, and piglets or seedlings are
+      biological assets. If the purpose is OTHER, ask them to briefly specify what the loan is for
+      (loanPurposeDetails); the objective is not met until they have.
+    requiredFields: [loanPurpose, loanAmount]
+    next: [apply_decision]
+
+  - id: apply_decision
+    objective: >
+      Briefly recap what the person is looking for, then ask whether they would like to apply and
+      have a loan advisor go through the details with them, which means taking a few more details
+      and storing them so the advisor can get in touch. If they say yes, go to
+      individual_business_profile for an INDIVIDUAL or company_profile for any other customer type.
+      If they say no, go to no_lead.
+    requiredFields: [wantsToApply]
+    next:
+      - state: company_profile
+        when:
+          wantsToApply: true
+          customerType: [SOLE_PROPRIETORSHIP, COOPERATIVE, PARTNERSHIP, ONE_PERSON_CORPORATION, CORPORATION]
+      - state: individual_business_profile
+        when: { wantsToApply: true, customerType: INDIVIDUAL }
+      - state: no_lead
+        when: { wantsToApply: false }
+
+  - id: company_profile
+    objective: >
+      Find out the business's registered name, its industry and the size of its total assets. For a
+      sole proprietorship, ask for the business name registered with the DTI, not the owner's name.
+      Do not ask for a business registration or tax number.
+    requiredFields: [companyName, industry, totalAssetSize]
+    next: [contact_details]
+
+  # An individual's business may be unregistered or not started yet, so it may have no name.
+  - id: individual_business_profile
+    objective: >
+      Find out the industry the person's business is in, or will be in, and the size of its total
+      assets. Ask whether they use a trade name for the business and note it if they do, but do not
+      insist on one. Do not ask for a business registration or tax number.
+    requiredFields: [industry, totalAssetSize]
+    next: [contact_details]
+
+  - id: contact_details
+    objective: >
+      Collect a phone number and an email address the advisor can use, when the person prefers to
+      be contacted, and the city they are based in: where the business is based, or where the person
+      lives for an INDIVIDUAL whose business has no fixed place or has not started. The city must be in the
+      Philippines; if the person gives a place outside the Philippines, politely explain that loans
+      are only available to customers based in the Philippines and ask for a Philippine city. If
+      they are not based in the Philippines, go to no_lead. The phone number must be a Philippine
+      mobile number, since the verification code is sent by SMS; if it is not, explain that and ask
+      for one, for example 0917 123 4567. The person's name is already known, so
+      do not ask for it again.
+    requiredFields: [phoneNumber, email, preferredContactTime, city]
+    next:
+      - state: confirm
+      # Exit for someone not based in the Philippines, taken while city is still uncollected.
+      - state: no_lead
+        back: true
+
+  - id: confirm
+    objective: >
+      List back everything captured so the person can check it: their name, the type of borrower in
+      plain words (e.g. "individual" or "one-person corporation"), the business's name if any, its
+      industry and total asset size, the loan purpose (with the details they gave, if any) and
+      amount, and the phone number, email, city and preferred contact time. Ask them to confirm it
+      is correct. If they correct something, update the field and list it back again. If they change
+      the type of borrower, check the loan purpose is still one listed for the new type and ask again
+      if not, and if the new type is not INDIVIDUAL, make sure the registered business name is known.
+      The objective is met only when they explicitly confirm.
+    next: [verify_phone]
+
+  # Entering this state texts a one-time code to the phone number; the masked number is appended
+  # to the reply automatically. Going back to confirm and confirming again sends a fresh code.
+  # The code is checked by verifyOtp when the lead is submitted; a wrong code keeps the
+  # conversation here and asks again.
+  - id: verify_phone
+    objective: >
+      Tell the person that to finish the application a verification code has been texted to their
+      phone number, and ask them to type it here. Do not state the phone number or the code
+      yourself. If they did not get the code, want a new one, or need to change their phone number,
+      go back to confirm.
+    action: sendOtp
+    requiredFields: [otpCode]
+    next:
+      - state: submit_individual_lead
+        when: { customerType: INDIVIDUAL }
+      - state: submit_company_lead
+        when:
+          customerType: [SOLE_PROPRIETORSHIP, COOPERATIVE, PARTNERSHIP, ONE_PERSON_CORPORATION, CORPORATION]
+      - state: confirm
+        back: true
+
+  # The follow-ups list the documents to prepare, from the SBLAF checklist of supporting documents
+  # for the customer's form: Annex A-1 (ISP) for INDIVIDUAL and SOLE_PROPRIETORSHIP, Annex A-2 (CPC)
+  # for the rest, plus the documents for the loan purpose. They are fixed text so the list is exact,
+  # and are only added once the lead is created. Collateral documents are left to the advisor,
+  # since whether the loan is secured is not collected here.
+  - id: submit_individual_lead
+    objective: >
+      Tell the person their request has been submitted and that a loan advisor will contact them
+      within one business day, at their preferred time. Do not state a reference number or list
+      documents yourself; both are added automatically.
+    action: [verifyOtp, createIndividualLead]
+    followUp:
+      - message: |-
+          Documents to prepare
+          Your loan advisor will confirm exactly what you need; you only need the ones that apply to you. If you will offer collateral or a surety, your advisor will tell you what to bring for it. Please don't send documents in this chat; your advisor will tell you how to submit them.
+      - message: |-
+          Basic documents
+          • One (1) valid government-issued ID
+          • Marriage contract, if applicable
+          • Proof of business registration, if any: BIR, DTI or FFEDIS certificate of registration, barangay permit or mayor's permit
+
+          Income documents
+          • Latest income tax return (ITR) or BIR Form 2316
+          • If employed: payslips for the past 2 months, and certificate of employment with salary or employment contract (latest crew contract for seafarers)
+          • Bank statements or passbook for the past 6 months
+          • Proof of other income, if any, e.g. remittances for the past 6 months or a lease contract for rental income
+
+          Business documents
+          • Financial statements: audited for the past 3 years with the latest ITR, in-house, or pre-operating for a new business
+          • Business plan or proposal
+          • Business background, and franchise agreement, if any
+          • Utility bills for the past 3 months
+      # Documents for the loan purpose, from the SBLAF checklist. Working capital, business
+      # expansion and other purposes need none beyond the lists above.
+      - when: { loanPurpose: LOAN_TAKEOUT_REFINANCING }
+        message: |-
+          For refinancing or a loan takeout
+          • Statement of account from your current lender, and official receipts of your payments for the past 3 months
+      - when: { loanPurpose: REAL_ESTATE_CONSTRUCTION }
+        message: |-
+          For construction or development of real estate
+          • Building/floor plan of the proposed improvement
+          • Bill of materials
+          • Specification of proposed finishes
+          • Building permit
+      - when: { loanPurpose: REAL_ESTATE_ACQUISITION }
+        message: |-
+          For acquiring real estate
+          • Price quotation of the property
+          • Reservation agreement, contract to sell or statement of account from the seller or developer, if any
+          • Copies of the title (TCT/CCT) and tax declaration of the property, and a location/vicinity map
+      - when: { loanPurpose: EQUIPMENT_MOTOR_VEHICLE }
+        message: |-
+          For purchasing equipment or motor vehicles
+          • Purchase agreement or price quotation
+          • For a motor vehicle: LTO official receipt and certificate of registration (OR/CR) or deed of sale, once available
+      - when: { loanPurpose: BIOLOGICAL_ASSET }
+        message: |-
+          For purchasing biological assets
+          • Purchase agreement or price quotation, if any
+    terminal: true
+
+  # Every customer type other than INDIVIDUAL is submitted here; the lead records which type it is.
+  - id: submit_company_lead
+    objective: >
+      Tell the person the business's request has been submitted and that a loan advisor will
+      contact them within one business day, at their preferred time. Do not state a reference
+      number or list documents yourself; both are added automatically.
+    action: [verifyOtp, createCompanyLead]
+    followUp:
+      - message: |-
+          Documents to prepare
+          Your loan advisor will confirm exactly what you need; you only need the ones that apply to you. If you will offer collateral or a surety, your advisor will tell you what to bring for it. Please don't send documents in this chat; your advisor will tell you how to submit them.
+
+      # Sole proprietorships apply on the same form as individuals.
+      - when: { customerType: SOLE_PROPRIETORSHIP }
+        message: |-
+          Basic documents
+          • One (1) valid government-issued ID
+          • Marriage contract, if applicable
+          • DTI certificate of registration, BIR certificate of registration, and barangay or mayor's permit
+          • FFEDIS certificate of registration, if applicable
+
+          Income documents
+          • Latest income tax return (ITR)
+          • Bank statements or passbook for the past 6 months
+          • Proof of other income, if any
+
+          Business documents
+          • Financial statements: audited for the past 3 years with the latest ITR, in-house, or pre-operating for a new business
+          • Business plan or proposal
+          • Business background, and franchise agreement, if any
+          • Utility bills for the past 3 months
+
+      - when: { customerType: COOPERATIVE }
+        message: |-
+          Basic documents
+          • One (1) valid government-issued ID of the authorized representative
+          • Board resolution or secretary's certificate authorizing the loan and naming who may transact and sign for the cooperative
+          • Special power of attorney, if applicable
+          • CDA certificate of registration, certificate of compliance (if applicable) and list of elected officers
+          • FFEDIS certificate of registration, if applicable
+      - when: { customerType: PARTNERSHIP }
+        message: |-
+          Basic documents
+          • One (1) valid government-issued ID of the authorized representative
+          • Partnership resolution or secretary's certificate authorizing the loan and naming who may transact and sign for the partnership
+          • Special power of attorney, if applicable
+          • SEC certificate of registration and articles of partnership
+          • FFEDIS certificate of registration, if applicable
+      - when: { customerType: [ONE_PERSON_CORPORATION, CORPORATION] }
+        message: |-
+          Basic documents
+          • One (1) valid government-issued ID of the authorized representative
+          • Board resolution or secretary's certificate authorizing the loan and naming who may transact and sign for the corporation
+          • Special power of attorney, if applicable
+          • SEC certificate of registration, latest amended articles of incorporation and by-laws, and General Information Sheet (GIS), if applicable
+          • FFEDIS certificate of registration, if applicable
+      - when: { customerType: [COOPERATIVE, PARTNERSHIP, ONE_PERSON_CORPORATION, CORPORATION] }
+        message: |-
+          Financial documents
+          • Financial statements: audited for the past 3 years with the latest ITR, in-house, or pre-operating for a new business
+          • Bank statements or passbook for the past 6 months
+          • Company profile or business background
+          • Proof of other income, if any
+          • Utility bills for the past 3 months
+
+      # Documents for the loan purpose, from the SBLAF checklist. Working capital, business
+      # expansion and other purposes need none beyond the lists above.
+      - when: { loanPurpose: LOAN_TAKEOUT_REFINANCING }
+        message: |-
+          For refinancing or a loan takeout
+          • Statement of account from your current lender, and official receipts of your payments for the past 3 months
+      - when: { loanPurpose: REAL_ESTATE_CONSTRUCTION }
+        message: |-
+          For construction or development of real estate
+          • Building/floor plan of the proposed improvement
+          • Bill of materials
+          • Specification of proposed finishes
+          • Building permit
+      - when: { loanPurpose: REAL_ESTATE_ACQUISITION }
+        message: |-
+          For acquiring real estate
+          • Price quotation of the property
+          • Reservation agreement, contract to sell or statement of account from the seller or developer, if any
+          • Copies of the title (TCT/CCT) and tax declaration of the property, and a location/vicinity map
+      - when: { loanPurpose: EQUIPMENT_MOTOR_VEHICLE }
+        message: |-
+          For purchasing equipment or motor vehicles
+          • Purchase agreement or price quotation
+          • For a motor vehicle: LTO official receipt and certificate of registration (OR/CR) or deed of sale, once available
+      - when: { loanPurpose: BIOLOGICAL_ASSET }
+        message: |-
+          For purchasing biological assets
+          • Purchase agreement or price quotation, if any
+    terminal: true
+
+  - id: no_lead
+    objective: >
+      Respect the person's choice not to go ahead, thank them, and let them know they can come
+      back or apply on the website at any time.
+    terminal: true

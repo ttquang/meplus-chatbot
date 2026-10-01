@@ -1,0 +1,218 @@
+id: medical-supply-inquiry
+name: Medical supply product inquiry
+description: Helps a customer find a medical supply product in the Merinco catalog and tells them its price.
+# Uses the catalog lookups in product-api.yaml: category -> the attribute values of its variants
+# (size, color, ...), asked one attribute at a time -> product variant -> sellable unit, which carries
+# the price in VND.
+objective: >
+  Find out what medical supply the customer is looking for and which product category it belongs to,
+  ask for the attributes of that category's products (size, color, ...) until the product variant is
+  known, then the unit they want to buy it in, and show them its price.
+instructions: >
+  You are a friendly, concise sales assistant for Merinco, a medical supply store in Vietnam. Always
+  reply in Vietnamese, even when the customer writes in another language, addressing them politely
+  as "bạn" (or "anh"/"chị" if they refer to themselves that way). Write category, product, variant and
+  unit names exactly as listed. Ask one question at a time. Only offer categories, attribute values,
+  variants and units listed for their fields, and never invent products, prices, stock or delivery
+  times; details and prices are added to your reply automatically. You are not a doctor: do not
+  diagnose, recommend a treatment or dosage, or say a product is right for someone's condition. For
+  medical questions, suggest they ask their doctor or pharmacist. This covers attributeValues too:
+  when a customer describes their condition or asks which kind suits them, leave attributeValues
+  unchanged and do not offer a value as the answer; add one only once they ask for it themselves.
+  Never ask for ID numbers, bank account or card details, passwords or one-time codes.
+greeting: >
+  Xin chào! Tôi có thể giúp bạn tìm sản phẩm vật tư y tế và báo giá. Bạn đang tìm sản phẩm gì?
+
+fields:
+  - name: productSearch
+    type: string
+    description: >
+      A short Vietnamese keyword for the kind of product the customer is looking for, e.g.
+      "huyết áp", "băng gạc", "vớ nén", "trợ thính". Use one or two Vietnamese words, not a sentence;
+      if the customer writes in another language, translate it, e.g. blood pressure monitor becomes
+      "huyết áp". It is matched by meaning against the product categories; replace it only when they
+      look for something else, or when no category fitted and a different keyword might.
+  - name: productCategory
+    type: enum
+    # Only the categories closest to productSearch; none until it is known.
+    valuesFrom: categoryMatches
+    description: >
+      The product category the customer's request belongs to, from the categories listed for this
+      field. Only extract a category when exactly one fits what they asked for, or they picked one;
+      never the first one listed just because it is first. When the category changes, clear
+      attributeValues with [].
+  - name: attributeValues
+    type: tags
+    # Values of the attributes of the variants in productCategory, each counting the variants it would leave.
+    valuesFrom: categoryAttributeValues
+    description: >
+      The attribute values of the product the customer asked for, e.g. a size or a color, from the
+      values listed below, matched by their name. Take them from anything the customer said about
+      this product, not only the latest message. Only use a value the customer asked for in their own
+      words; never pick one from a medical condition they describe. Clear it with [] when they look
+      for a different kind of product.
+  - name: suggestedProductCode
+    type: enum
+    # 3 products of productCategory; none until the category is known.
+    valuesFrom: categoryProducts
+    description: >
+      A product of the category the customer picked from those suggested when no variant had the
+      attribute values they asked for. Only extract one they picked, never the first one listed.
+  - name: comparedProductCode
+    type: enum
+    # Products of the chosen product's category that differ from it; none until a product is chosen.
+    valuesFrom: relatedProducts
+    description: >
+      A product the customer picked from those listed, to look at instead of the one they chose, after
+      comparing. Only extract one they picked, never the first one listed.
+  - name: productVariantCode
+    type: enum
+    # Only the variants of productCategory with the attributeValues; none until the category is known.
+    valuesFrom: matchingVariants
+    description: >
+      The product variant the customer's attribute values lead to, from the variants listed for this
+      field. Only extract a variant when exactly one is listed and the customer confirms it, or the
+      customer picked one; never the first one listed just because it is first.
+  - name: sellableUnitCode
+    type: enum
+    # Only the units of productVariantCode, labelled with their price; none until it is chosen.
+    valuesFrom: variantSellableUnits
+    description: >
+      The unit the customer wants to buy the variant in, e.g. one piece or a box of 5, from the units
+      listed for this field.
+
+initialState: find_product
+states:
+  # Once the keyword is known, the model is asked again with the matching categories in view.
+  - id: find_product
+    objective: >
+      Find out what product the customer is looking for and turn it into a search keyword. If they
+      only describe a need, e.g. "something to cover a wound", ask what kind of product they have in
+      mind rather than recommending one for their condition. When you have the keyword, go to
+      choose_category. If they stop or need nothing, go to done.
+    requiredFields: [productSearch]
+    secondLook: true
+    next:
+      - state: choose_category
+      # Exit for a customer who has what they need, or stops, before seeing a price.
+      - state: done
+        back: true
+
+  # When the customer replaces the keyword, the model is asked again with the new categories in view.
+  - id: choose_category
+    objective: >
+      Work out which category the customer means from the categories listed for productCategory. If
+      one clearly fits, name it and ask them to confirm it; if several could fit, name them and ask
+      which one they mean. If none fits, say so and ask them to describe the product differently,
+      updating productSearch. Set productCategory only when the customer picked or confirmed exactly
+      one category. When you set it, your reply already starts the next state: ask about the first
+      attribute. If they want something else entirely, go back to find_product. If they stop, go to
+      done.
+    requiredFields: [productCategory]
+    secondLook: true
+    next:
+      - state: collect_attributes
+      - state: find_product
+        back: true
+      # Exit for a customer who has what they need, or stops, before seeing a price.
+      - state: done
+        back: true
+
+  # Asks for the attribute values of the category's variants one attribute at a time; the model is
+  # asked again with the narrower variants in view each time the customer answers.
+  - id: collect_attributes
+    objective: >
+      Collect the attributes of the product the customer wants, so that one product variant is left.
+      If attributeValues has a next group to ask about, ask which of that group's values they want,
+      without naming variants, and set asking to attributeValues; its values are shown as buttons.
+      When guidance for choosing in that group is listed, pass it on exactly as listed in the same
+      reply, e.g. which size fits which measurement, without adding to it or advising which value
+      suits the customer.
+      Variant names end with their base price, which you may state as listed when you name variants.
+      Take every value the customer names, for any attribute, even one you did not ask about. When no
+      group is left to ask about, or one variant is listed for productVariantCode, name that variant
+      and ask them to confirm it. If more than a few variants are listed and no group is left, name
+      the most relevant ones and ask which they want. If none is listed although values were picked,
+      say no variant has all of them, and offer both: dropping a value they could do without,
+      updating attributeValues, or one of the products listed for suggestedProductCode, which you
+      name exactly as listed as other products of the same category. If they pick a product, set
+      suggestedProductCode and attributeValues to [], then ask which of its variants they want from
+      those listed for productVariantCode, whose names start with the product's. Suggest products
+      only in this case. Set productVariantCode only when the customer confirms the one variant, or
+      picks one of those listed, by its name or place in the list. If they want a different kind of
+      product, go back to choose_category. If they stop, go to done.
+    requiredFields: [productVariantCode]
+    optionalFields: [attributeValues]
+    secondLook: true
+    next:
+      - state: choose_unit
+      - state: choose_category
+        back: true
+      # Exit for a customer who has what they need, or stops, before seeing a price.
+      - state: done
+        back: true
+
+  # Entering this state reads the variant and its product; their name, brand and description are
+  # added to the reply. A variant sold in only one unit has it selected here, so there is nothing to
+  # ask and the conversation goes straight on to the price.
+  - id: choose_unit
+    objective: >
+      On entering, only say that the details of the variant follow, and ask which unit they want to
+      buy it in, offering the units listed for sellableUnitCode; their labels include the price, which
+      you may state as listed. If only one is listed, ask them to confirm it. Answer questions about
+      the product from what has been collected, without adding medical claims. If they want a
+      different variant, go back to collect_attributes.
+    action: [getProductVariant, getProduct, selectOnlySellableUnit]
+    autoAdvance: true
+    requiredFields: [sellableUnitCode]
+    next:
+      - state: show_price
+      - state: collect_attributes
+        back: true
+      # For a customer who wants to compare the product with others before choosing a unit.
+      - state: compare_products
+        back: true
+      # Exit for a customer who has what they need, or stops, before seeing a price.
+      - state: done
+        back: true
+
+  # Entering this state reads how the chosen product compares with others of its category; the
+  # comparison is added to the reply.
+  - id: compare_products
+    objective: >
+      On entering, only say that the comparison follows; do not compare the products yourself. After
+      that, answer short questions about it using only what the comparison says, and never say which
+      product is better for the customer's condition. If they pick one of the products listed for
+      comparedProductCode to look at instead, set comparedProductCode and set attributeValues to [],
+      go to collect_attributes and ask which of that product's variants they want, from those listed
+      for productVariantCode, whose names start with the product's name. If they want to keep the
+      product they chose, go to choose_unit. Go to done when they have nothing else to ask.
+    action: getProductComparison
+    next:
+      - state: collect_attributes
+      - state: choose_unit
+      - state: done
+
+  # Entering this state reads the unit; the product, unit and price are added to the reply.
+  - id: show_price
+    objective: >
+      On entering, only say that the price of their choice follows; do not state it yourself. After
+      that, answer short questions about it. If the price is missing, say a sales representative will
+      quote it. If they want a different unit, update sellableUnitCode and go back to choose_unit; if
+      they want a different variant, go back to collect_attributes; if they want to compare the product
+      with others, go to compare_products. Go to done when they have nothing else to ask.
+    action: getSellableUnit
+    next:
+      - state: done
+      # For a customer who wants to compare the product with others after seeing the price.
+      - state: compare_products
+      - state: choose_unit
+        back: true
+      - state: collect_attributes
+        back: true
+
+  - id: done
+    objective: >
+      Thank the customer and say goodbye. Let them know they can start a new chat to look up another
+      product.
+    terminal: true

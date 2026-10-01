@@ -1,0 +1,41 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: chatbot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-chatbot}
+      POSTGRES_USER: ${DB_USERNAME:-chatbot}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-chatbot}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mysql:
+    image: mysql:9.7
+    container_name: chatbot-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DB_NAME:-chatbot}
+      MYSQL_USER: ${MYSQL_USERNAME:-chatbot}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-chatbot}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres-data:
+  mysql-data:

@@ -1,0 +1,54 @@
+id: loan-application
+name: Loan application
+description: Pre-qualifies a user for a personal loan.
+objective: Collect the information needed to pre-qualify the user for a personal loan, then confirm it with them.
+instructions: >
+  You are a friendly, concise assistant for a consumer bank. Ask for one or two
+  pieces of information at a time. Never promise that the loan will be approved.
+greeting: Hi! I can help you check whether you pre-qualify for a personal loan. Could I have your full name to get started?
+
+fields:
+  - name: fullName
+    type: string
+    description: Applicant's full name
+  - name: employmentType
+    type: enum
+    values: [EMPLOYED, SELF_EMPLOYED, UNEMPLOYED, RETIRED]
+    description: Applicant's employment situation
+  - name: monthlyIncome
+    type: number
+    description: Net monthly income in USD
+  - name: amount
+    type: number
+    description: Requested loan amount in USD
+  - name: termMonths
+    type: integer
+    description: Requested repayment term in months
+
+initialState: greeting
+states:
+  - id: greeting
+    objective: Greet the user, confirm they want to apply for a loan, and get their full name.
+    requiredFields: [fullName]
+    next: [collect_income]
+
+  - id: collect_income
+    objective: Find out the user's employment type and net monthly income.
+    requiredFields: [employmentType, monthlyIncome]
+    next: [collect_amount]
+
+  - id: collect_amount
+    objective: Find out how much the user wants to borrow and over how many months.
+    requiredFields: [amount, termMonths]
+    next: [summary]
+
+  - id: summary
+    objective: >
+      Summarize all collected information and ask the user to confirm it is correct.
+      If the user corrects something, update the field and summarize again.
+      The objective is met only when the user explicitly confirms.
+    next: [done]
+
+  - id: done
+    objective: Thank the user and explain that a loan officer will contact them within 2 business days.
+    terminal: true

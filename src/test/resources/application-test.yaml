@@ -1,0 +1,12 @@
+spring:
+  ai:
+    deepseek:
+      api-key: test-key
+  datasource:
+    url: jdbc:h2:mem:chatbot-test;DB_CLOSE_DELAY=-1
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+chatbot:
+  otp:
+    mock-code: "123456"

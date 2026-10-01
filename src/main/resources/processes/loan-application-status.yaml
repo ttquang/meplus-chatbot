@@ -1,0 +1,146 @@
+id: loan-application-status
+name: Loan application status
+description: Tells a customer where their online loan application stands, after verifying their phone number.
+objective: >
+  Find out which application the person is asking about from its reference number, verify that they
+  own the phone number it was made with using a one-time code, and then show them its current status.
+  If the application is still in progress, offer to pass a message on to their loan advisor.
+instructions: >
+  You are a friendly, concise assistant on a lender's website. Ask for one or two pieces of
+  information at a time. You do not know the status of any application: never guess, describe or
+  hint at a status, decision, date or advisor name; the status is added to your reply automatically
+  once the person is verified. Never promise approval, interest rates, fees or loan amounts. Never
+  ask for ID numbers, bank account or card details or passwords. The only one-time code you may ask
+  for is the verification code texted to the person's phone in the verify_phone state.
+greeting: >
+  Hi! I can check the status of your online loan application. What is the reference number you got
+  when you applied? It looks like LD-IND-000042.
+
+fields:
+  - name: ticketNumber
+    type: string
+    description: >
+      Reference number of the application, given when it was submitted, e.g. LD-IND-000042 for an
+      individual or LD-COM-000042 for a company. Store it in upper case with dashes, e.g. ld ind 42
+      becomes LD-IND-42. Never make one up or complete a partial one.
+  - name: phoneNumber
+    type: string
+    description: >
+      Philippine mobile number the application was made with; the verification code is texted to it.
+      Accept it as 09XX XXX XXXX, 9XX XXX XXXX, +63 9XX XXX XXXX or 63 9XX XXX XXXX, and store it
+      as +639 followed by the remaining 9 digits with no spaces or dashes, e.g. +639171234567.
+      Only extract it if it is a valid Philippine mobile number.
+  - name: otpCode
+    type: string
+    description: >
+      The verification code the person typed after it was texted to their phone, exactly as typed.
+      Only extract it from the person's latest message, never reuse an earlier one.
+  - name: applicationCompleted
+    type: boolean
+    # Captured from getApplicationStatus. Read-only so the person cannot talk their way into
+    # leaving a message on a completed application.
+    readOnly: true
+    description: >
+      Whether the application is completed (approved, declined or closed). Only an application
+      still in progress, where this is false, can take a message for the loan advisor.
+  - name: advisorMessage
+    type: string
+    description: >
+      The message the person wants passed on to their loan advisor, in their own words. Keep their
+      wording; you may fix obvious typos. Never include card or bank account numbers, passwords or
+      one-time codes in it.
+
+# A person who turns out to want a new loan rather than a status is handed over.
+switchTo: [loan-lead-capture]
+
+initialState: welcome
+states:
+  - id: welcome
+    objective: >
+      Get the application's reference number and the mobile number the application was made with.
+      If the person does not have a reference number, go to no_reference.
+    requiredFields: [ticketNumber, phoneNumber]
+    next:
+      - state: verify_phone
+      - state: no_reference
+        back: true
+
+  # Entering this state texts a one-time code to the phone number; the masked number is appended
+  # to the reply automatically. The code is checked by verifyOtp when the status is looked up.
+  # A wrong code keeps the conversation here and asks again. A reference number that does not
+  # match the phone number is forgotten, so it is asked for again here without a new code.
+  - id: verify_phone
+    objective: >
+      Tell the person that to protect their details a verification code has been texted to their
+      phone, and ask them to type it here. Do not state the phone number or the code yourself.
+      If you were told the reference number could not be found, ask for the correct reference
+      number; the code they already typed stays valid. If they did not get the code, want a new one,
+      or need to change their phone number, go back to welcome.
+    action: sendOtp
+    requiredFields: [otpCode, ticketNumber]
+    next:
+      - state: show_status
+      - state: welcome
+        back: true
+
+  # The status, and for an application still in progress the question about leaving a message,
+  # are added to the reply after the lookup, since the model writes its reply before the status
+  # is known.
+  - id: show_status
+    objective: >
+      On entering, only thank the person for verifying and say that the latest status of their
+      application follows. Do not state the status, reference number or any dates yourself, and do
+      not ask anything; they are added automatically. After that, if the application is still in
+      progress and the person wants to leave a message for their loan advisor, go to
+      leave_message. If they do not want to, or the application is completed, answer any short
+      question about the status shown and go to done when they have nothing else.
+    action: [verifyOtp, getApplicationStatus]
+    followUp:
+      - when: { applicationCompleted: false }
+        message: Would you like to leave a message for your loan advisor? I can pass it on with your application.
+    next:
+      - state: leave_message
+        when: { applicationCompleted: false }
+      - state: done
+
+  - id: leave_message
+    objective: >
+      Ask what message they would like passed on to their loan advisor, for example a question or
+      a better time to call. Remind them not to include card or bank account numbers or passwords.
+      If they change their mind, go to done.
+    requiredFields: [advisorMessage]
+    next:
+      - state: confirm_message
+      - state: done
+        back: true
+
+  - id: confirm_message
+    objective: >
+      Read the message back exactly as it will be sent and ask the person to confirm it. If they
+      change it, update advisorMessage and read it back again. The objective is met only when they
+      explicitly confirm. If they decide not to send it, go to done.
+    next:
+      - state: message_sent
+      - state: done
+        back: true
+
+  - id: message_sent
+    objective: >
+      Tell the person their message has been passed on and that their loan advisor will get back
+      to them at their preferred contact time. Thank them.
+    # Attaches the message to the lead in the (mock) CRM, where the advisor reads it.
+    action: attachLeadNote
+    terminal: true
+
+  - id: done
+    objective: >
+      Thank the person and say goodbye. Let them know they can start a new chat to check another
+      application.
+    terminal: true
+
+  - id: no_reference
+    objective: >
+      Explain that the reference number was shown at the end of the application chat, and that it
+      is needed to check the status. Suggest they look for it, then start a new chat, or wait for
+      their loan advisor, who contacts applicants within one business day.
+    terminal: true

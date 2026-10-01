@@ -1,0 +1,133 @@
+# The APIs processes may call. Endpoints, payload mapping and credentials live here, not in the
+# process definitions: a process only names the api it wants.
+#
+# Values: { from: <collected field or $conversationId/$processId>, required: true } or { value: <constant> }
+# Templates: {{field}} in headers and messages. ${property} in urls is resolved when the call is made.
+# rejectedMessage: shown instead of the generic failure message when the api answers 4xx.
+# clearOnRejection: collected fields forgotten on a 4xx, so the assistant asks for them again.
+apis:
+  - id: createIndividualLead
+    method: POST
+    url: ${chatbot.api.base-url}/api/leads/individual
+    headers:
+      Idempotency-Key: "{{$conversationId}}"
+    body:
+      contactName: { from: contactName, required: true }
+      loanPurpose: { from: loanPurpose, required: true }
+      loanPurposeDetails: { from: loanPurposeDetails }
+      loanAmount: { from: loanAmount, required: true }
+      phoneNumber: { from: phoneNumber, required: true }
+      email: { from: email, required: true }
+      city: { from: city, required: true }
+      preferredContactTime: { from: preferredContactTime }
+      companyName: { from: companyName }
+      industry: { from: industry }
+      totalAssetSize: { from: totalAssetSize }
+      conversationId: { from: $conversationId, required: true }
+    capture:
+      ticketNumber: ticketNumber
+    message: "Your reference number is {{ticketNumber}}. Please keep it for any follow-up."
+
+  - id: createCompanyLead
+    method: POST
+    url: ${chatbot.api.base-url}/api/leads/company
+    headers:
+      Idempotency-Key: "{{$conversationId}}"
+    body:
+      customerType: { from: customerType, required: true }
+      companyName: { from: companyName, required: true }
+      industry: { from: industry, required: true }
+      totalAssetSize: { from: totalAssetSize, required: true }
+      contactName: { from: contactName, required: true }
+      loanPurpose: { from: loanPurpose, required: true }
+      loanPurposeDetails: { from: loanPurposeDetails }
+      loanAmount: { from: loanAmount, required: true }
+      phoneNumber: { from: phoneNumber, required: true }
+      email: { from: email, required: true }
+      city: { from: city, required: true }
+      preferredContactTime: { from: preferredContactTime }
+      conversationId: { from: $conversationId, required: true }
+    capture:
+      ticketNumber: ticketNumber
+    message: "Your reference number is {{ticketNumber}}. Please keep it for any follow-up."
+
+  # Lookup: the loan purposes on offer, which depend on the customer type and change over time.
+  # Each customer type has its own list, seeded from the BSP SBLAF loan purposes.
+  - id: loanPurposes
+    method: GET
+    url: ${chatbot.api.base-url}/api/loan-purposes
+    query:
+      customerType: { from: customerType }
+    options:
+      code: code
+      label: label
+    cacheSeconds: 300
+
+  # Phone verification. The OTP endpoints are a mock (MockOtpService) that logs the code instead of
+  # texting it; point these urls at the real OTP provider when it is available.
+  - id: sendOtp
+    method: POST
+    url: ${chatbot.api.base-url}/api/otp/send
+    body:
+      phoneNumber: { from: phoneNumber, required: true }
+      conversationId: { from: $conversationId, required: true }
+    capture:
+      otpRequestId: otpRequestId
+      maskedPhone: maskedPhone
+      otpExpiresInMinutes: expiresInMinutes
+    message: "We've sent a 6-digit code to {{maskedPhone}}. It is valid for {{otpExpiresInMinutes}} minutes."
+
+  - id: verifyOtp
+    method: POST
+    url: ${chatbot.api.base-url}/api/otp/verify
+    body:
+      otpRequestId: { from: otpRequestId, required: true }
+      code: { from: otpCode, required: true }
+    rejectedMessage: >-
+      That code didn't work. Please check the latest text message and type the 6-digit code again,
+      or let me know if you'd like a new code.
+    clearOnRejection: [otpCode]
+
+  # Status of an application made through loan-lead-capture. Only answers when the phone number
+  # matches the one the application was made with, and loan-application-status only calls it once
+  # that phone number has been verified with a one-time code. The status wording comes from the
+  # lead service, so the assistant never describes a status in its own words.
+  - id: getApplicationStatus
+    method: POST
+    url: ${chatbot.api.base-url}/api/leads/status
+    body:
+      ticketNumber: { from: ticketNumber, required: true }
+      phoneNumber: { from: phoneNumber, required: true }
+    capture:
+      applicationStatus: status
+      applicationStatusLabel: statusLabel
+      applicationStatusDescription: statusDescription
+      applicationCompleted: completed
+      submittedOn: submittedOn
+      statusUpdatedOn: lastUpdatedOn
+    message: >-
+      Application {{ticketNumber}}: {{applicationStatusLabel}}.
+      {{applicationStatusDescription}} Submitted on {{submittedOn}}, last updated on {{statusUpdatedOn}}.
+    rejectedMessage: >-
+      I couldn't find an application with reference number {{ticketNumber}} made with this phone
+      number. Please check the reference number, it looks like LD-IND-000042, and type it again.
+    clearOnRejection: [ticketNumber]
+
+  # Attaches the customer's message for their loan advisor to the lead in the CRM, where the
+  # advisor reads it. The CRM is a mock for now (MockCrmService), which stores the note and logs
+  # it; point this url and payload at the real CRM when it is available. The chatbot only gets
+  # here after the customer verified their phone and the status lookup matched it to this lead.
+  - id: attachLeadNote
+    method: POST
+    url: ${chatbot.api.base-url}/api/mock-crm/leads/{{ticketNumber}}/notes
+    headers:
+      Idempotency-Key: "{{$conversationId}}"
+    body:
+      type: { value: CUSTOMER_MESSAGE }
+      source: { value: CHATBOT }
+      text: { from: advisorMessage, required: true }
+    capture:
+      advisorNoteId: noteId
+    rejectedMessage: >-
+      I'm sorry, I couldn't pass your message on to your loan advisor. Your advisor can still help
+      you directly.

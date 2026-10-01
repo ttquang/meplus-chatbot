@@ -1,0 +1,219 @@
+# The medical supply catalog (Merinco): brands, products, product variants and sellable units.
+# Mapping syntax is described in lead-api.yaml. Messages are in Vietnamese, the catalog's language.
+#
+# Lookups (options) let a process offer catalog entries as the allowed values of a field, via
+# valuesFrom. The get* actions read one entry by code into the conversation, where the assistant
+# sees the captured fields under "Collected so far" and can answer questions about them.
+#
+# A category's products have variants told apart by attribute values (size, color, ...) and each
+# variant is sold in one or more sellable units (Cái, Hộp x5, ...), which carry the price in VND.
+apis:
+  # Lookup: brands, optionally narrowed to one country (as written in the catalog, e.g. "Nhật Bản").
+  - id: brands
+    method: GET
+    url: ${chatbot.api.base-url}/api/brands
+    query:
+      country: { from: brandCountry }
+    options:
+      code: code
+      label: name
+    cacheSeconds: 300
+
+  # Lookup: active products. Every filter is optional and they combine; category and
+  # brandCode match the whole value ignoring case, productSearch matches part of the name, brand
+  # name or description.
+  - id: products
+    method: GET
+    url: ${chatbot.api.base-url}/api/products
+    query:
+      category: { from: productCategory }
+      brandCode: { from: brandCode }
+      q: { from: productSearch }
+    options:
+      code: code
+      label: name
+    cacheSeconds: 300
+
+  # Lookup: the product categories closest in meaning to what the customer is looking for, best
+  # first. The search is required, so a field using it has no options until it is known. A category
+  # is stored by its name, which is how products name theirs.
+  - id: categoryMatches
+    method: POST
+    url: ${chatbot.api.base-url}/api/product-category-search
+    body:
+      message: { from: productSearch, required: true }
+      limit: { value: 5 }
+    options:
+      code: name
+      label: description
+    cacheSeconds: 300
+
+  # Lookup: 3 products of a category, to suggest instead when the customer's attribute values match
+  # no variant. The category is required.
+  - id: categoryProducts
+    method: GET
+    url: ${chatbot.api.base-url}/api/products
+    query:
+      category: { from: productCategory, required: true }
+      limit: { value: 3 }
+    options:
+      code: code
+      label: name
+    cacheSeconds: 300
+
+  # Lookup: the products of the same category that have another value for one of the attributes of
+  # the product the customer chose, for comparing it with them. The product is required.
+  - id: relatedProducts
+    method: GET
+    url: ${chatbot.api.base-url}/api/product-attributes/related-products
+    query:
+      productCode: { from: productCode, required: true }
+    options:
+      code: code
+      label: name
+    cacheSeconds: 300
+
+  # Lookup: the attribute values the variants of a category have, e.g. "M" in the group "Kích cỡ",
+  # each with how many variants picking it would leave given the values already picked. The category
+  # is required, so a field using it has no options until it is known.
+  - id: categoryAttributeValues
+    method: GET
+    url: ${chatbot.api.base-url}/api/variant-attributes
+    query:
+      category: { from: productCategory, required: true }
+      attributes: { from: attributeValues }
+    options:
+      code: code
+      label: name
+      group: group
+      count: count
+      guidance: guidance
+    cacheSeconds: 300
+
+  # Lookup: the variants of a category that have the attribute values the customer picked, labelled
+  # with their product and base price, e.g. "Vớ y khoa (M / Trắng) - giá cơ bản: Cái - 150.000 đ". The
+  # category is required.
+  - id: matchingVariants
+    method: GET
+    url: ${chatbot.api.base-url}/api/product-variants
+    query:
+      category: { from: productCategory, required: true }
+      attributes: { from: attributeValues }
+    options:
+      code: code
+      label: displayName
+    cacheSeconds: 300
+
+  # Lookup: the tags the products matching the search carry, e.g. "Đục" in the group "Độ trong",
+  # each with how many products picking it would leave given the tags already picked. Before the
+  # search is known, the tags of the whole catalog.
+  - id: productTagOptions
+    method: GET
+    url: ${chatbot.api.base-url}/api/product-tags
+    query:
+      q: { from: productSearch }
+      tags: { from: productTags }
+    options:
+      code: code
+      label: name
+      group: group
+      count: count
+      description: synonyms
+    cacheSeconds: 300
+
+  # One brand by code, e.g. BRAND-045. The catch-all brand "Khác" has no country.
+  - id: getBrand
+    method: GET
+    url: ${chatbot.api.base-url}/api/brands/{{brandCode}}
+    capture:
+      brandName: name
+      brandCountry: country
+    rejectedMessage: >-
+      Tôi không tìm thấy thương hiệu có mã {{brandCode}}. Bạn vui lòng kiểm tra lại thương hiệu và thử lại.
+    clearOnRejection: [brandCode]
+
+  # One product by code, e.g. PRODUCT-00194, with its brand.
+  - id: getProduct
+    method: GET
+    url: ${chatbot.api.base-url}/api/products/{{productCode}}
+    capture:
+      productName: name
+      productCategory: category
+      productDescription: description
+      productUom: uom
+      productBrandCode: brand.code
+      productBrandName: brand.name
+      productBrandCountry: brand.country
+    message: "{{productName}} ({{productBrandName}}, {{productCategory}}): {{productDescription}}"
+    rejectedMessage: >-
+      Tôi không tìm thấy sản phẩm có mã {{productCode}}. Bạn vui lòng kiểm tra lại mã sản phẩm và thử lại.
+    clearOnRejection: [productCode]
+
+  # Lookup: the variants of a product, labelled by what tells them apart, e.g. "M / Trắng".
+  - id: productVariants
+    method: GET
+    url: ${chatbot.api.base-url}/api/product-variants
+    query:
+      productCode: { from: productCode, required: true }
+    options:
+      code: code
+      label: label
+    cacheSeconds: 300
+
+  # Lookup: the units a variant is sold in, labelled with quantity and price, e.g. "Hộp x5 - 150.000 đ".
+  # Narrowed by productVariantCode, or by productCode for every variant of a product.
+  - id: sellableUnits
+    method: GET
+    url: ${chatbot.api.base-url}/api/sellable-units
+    query:
+      productVariantCode: { from: productVariantCode }
+      productCode: { from: productCode }
+    options:
+      code: code
+      label: label
+    cacheSeconds: 300
+
+  # Lookup: the units one variant is sold in, with prices. The variant is required, so a field using
+  # it has no options until the variant is chosen.
+  - id: variantSellableUnits
+    method: GET
+    url: ${chatbot.api.base-url}/api/sellable-units
+    query:
+      productVariantCode: { from: productVariantCode, required: true }
+    options:
+      code: code
+      label: label
+    cacheSeconds: 300
+
+  # One variant by code, e.g. PRODUCT-00001-001.
+  - id: getProductVariant
+    method: GET
+    url: ${chatbot.api.base-url}/api/product-variants/{{productVariantCode}}
+    capture:
+      variantLabel: label
+      variantProductCode: productCode
+      variantProductName: productName
+      variantAdditionalDesc: additionalDesc
+      productCode: productCode
+    message: "{{variantProductName}}: {{variantLabel}}\n{{variantAdditionalDesc}}"
+    rejectedMessage: >-
+      Tôi không tìm thấy phân loại sản phẩm có mã {{productVariantCode}}. Bạn vui lòng kiểm tra lại mã và thử lại.
+    clearOnRejection: [productVariantCode]
+
+  # One sellable unit by code, e.g. PRODUCT-00001-001-U01, with its price. The price is empty when
+  # the unit has none yet; the label then leaves it out.
+  - id: getSellableUnit
+    method: GET
+    url: ${chatbot.api.base-url}/api/sellable-units/{{sellableUnitCode}}
+    capture:
+      sellableUnitLabel: label
+      sellableUnitSaleUom: saleUom
+      sellableUnitQuantity: quantity
+      sellableUnitPrice: price
+      sellableUnitVariantCode: productVariantCode
+      sellableUnitProductCode: productCode
+      sellableUnitProductName: productName
+    message: "{{sellableUnitProductName}}: {{sellableUnitLabel}}"
+    rejectedMessage: >-
+      Tôi không tìm thấy đơn vị bán có mã {{sellableUnitCode}}. Bạn vui lòng kiểm tra lại mã và thử lại.
+    clearOnRejection: [sellableUnitCode]

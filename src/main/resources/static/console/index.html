@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chatbot console</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+    <h1>Chatbot console</h1>
+    <div class="controls">
+        <label class="visually-hidden" for="process">Process</label>
+        <select id="process"></select>
+        <button id="start" type="button">New conversation</button>
+    </div>
+</header>
+
+<p id="error" class="error" hidden></p>
+
+<main>
+    <section class="chat" aria-label="Conversation">
+        <div id="messages" class="messages">
+            <p class="empty">Start a conversation. The assistant picks the process from what you type, or choose one to test it directly.</p>
+        </div>
+        <form id="composer" class="composer">
+            <label class="visually-hidden" for="input">Message</label>
+            <textarea id="input" rows="2" placeholder="Type a message, then press Enter" disabled></textarea>
+            <button id="send" type="submit" disabled>Send</button>
+        </form>
+    </section>
+
+    <aside class="panel" aria-label="Conversation state">
+        <div id="state-empty" class="empty">No conversation yet.</div>
+        <div id="state" hidden>
+            <dl class="summary">
+                <dt>Process</dt>
+                <dd id="process-name"></dd>
+                <dt>Status</dt>
+                <dd><span id="status" class="badge"></span></dd>
+                <dt>State</dt>
+                <dd><code id="state-id"></code></dd>
+            </dl>
+            <p id="state-objective" class="objective"></p>
+
+            <h2>Missing fields</h2>
+            <ul id="missing" class="tags"></ul>
+
+            <h2>Collected</h2>
+            <table id="collected" class="collected"></table>
+
+            <h2>Last turn</h2>
+            <ul id="turn" class="turn"></ul>
+        </div>
+    </aside>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>

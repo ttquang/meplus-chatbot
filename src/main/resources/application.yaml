@@ -1,0 +1,59 @@
+spring:
+  application:
+    name: chatbot
+
+  ai:
+    deepseek:
+      api-key: ${DEEPSEEK_API_KEY}
+      chat:
+        model: deepseek-v4-flash
+        temperature: 0.3
+
+  # Defaults match compose.yaml; override with env vars in other environments.
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:chatbot}
+    username: ${DB_USERNAME:chatbot}
+    password: ${DB_PASSWORD:chatbot}
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+chatbot:
+  # Where process definitions are loaded from.
+  processes-location: classpath*:processes/*.y*ml
+  # Process a conversation starts in when the client does not pick one. It works out from the
+  # chat whether the person wants to apply or check a status, and switches to that process.
+  default-process: assistant
+  # Where the API catalog is loaded from.
+  apis-location: classpath*:apis/*.y*ml
+  # Maximum number of past messages sent to the model on each turn.
+  history-window: 30
+  # Most answers a question may offer as buttons. A field with more values than this is left to
+  # the reply text, since a long row of buttons reads worse than the question it came from.
+  max-choices: 6
+  api:
+    # Base url the catalog's ${chatbot.api.base-url} placeholders resolve to. The lead and
+    # reference endpoints currently live in this application; point this elsewhere to use
+    # a separate service without touching the process definitions.
+    base-url: ${API_BASE_URL:http://localhost:8080}
+    # Hosts a catalog api may call. Anything else is refused, so an edited catalog cannot make
+    # this server call somewhere it should not. Add the host when base-url moves off this machine.
+    # Entries: host, host:port, or *.domain
+    allowed-hosts: ${API_ALLOWED_HOSTS:localhost,127.0.0.1}
+  embedding:
+    # Ollama server and model the product embeddings are made with. Changing the model re-embeds
+    # every product on the next reindex.
+    base-url: ${OLLAMA_BASE_URL:http://172.24.1.81:11434}
+    model: qwen3-embedding:4b
+    # Products embedded per request.
+    batch-size: 16
+    # Embed new and changed products when the application starts.
+    reindex-on-startup: ${EMBEDDING_REINDEX_ON_STARTUP:false}
+  otp:
+    # How long a one-time code stays valid.
+    ttl: PT5M
+    # Mock OTP only: when set, every code is this value instead of a random one, for demos and
+    # testing. Codes are always written to the log since the mock sends no text messages.
+    mock-code: ${OTP_MOCK_CODE:}
